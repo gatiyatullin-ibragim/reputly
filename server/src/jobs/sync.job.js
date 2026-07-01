@@ -1,5 +1,6 @@
 const cron = require('node-cron')
 const { syncAll } = require('../services/sync.service')
+const { syncAllCompetitors } = require('../services/competitor.sync.service')
 
 function startSyncJob() {
   // Каждые 2 часа
@@ -7,6 +8,7 @@ function startSyncJob() {
     console.log('[CRON] Запуск плановой синхронизации...')
     try {
       await syncAll()
+      await syncAllCompetitors()
     } catch (err) {
       console.error('[CRON] Ошибка:', err.message)
     }

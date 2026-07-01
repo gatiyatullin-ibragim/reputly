@@ -8,6 +8,9 @@ const locationSchema = new mongoose.Schema(
     yandexOrgId:   { type: String, default: null },
     twoGisId:      { type: String, default: null },
     avitoUrl:      { type: String, default: null },
+    instagramBusinessId:   { type: String, default: null },
+    instagramPageAccessToken: { type: String, default: null },
+    instagramConnectedAt:  { type: Date, default: null },
     lastSyncAt:    { type: Date, default: null },
   },
   { timestamps: true }

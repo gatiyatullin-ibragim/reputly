@@ -4,7 +4,7 @@ const reviewSchema = new mongoose.Schema(
   {
     locationId:   { type: mongoose.Schema.Types.ObjectId, ref: 'Location', required: true },
     businessId:   { type: mongoose.Schema.Types.ObjectId, ref: 'Business', required: true },
-    platform:     { type: String, enum: ['GOOGLE', 'YANDEX', 'TWOGIS', 'AVITO'], required: true },
+    platform:     { type: String, enum: ['GOOGLE', 'YANDEX', 'TWOGIS', 'AVITO', 'INSTAGRAM'], required: true },
     externalId:   { type: String, required: true },
     authorName:   { type: String, required: true },
     authorAvatar: { type: String, default: null },

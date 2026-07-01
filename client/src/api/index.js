@@ -31,3 +31,17 @@ export const reviewApi = {
 export const analyticsApi = {
   getDashboard: () => api.get('/analytics/dashboard'),
 }
+
+export const instagramApi = {
+  connect: (code, locationId) => api.post('/instagram/connect', { code, locationId }),
+}
+
+export const competitorApi = {
+  getAll: () => api.get('/competitors'),
+  create: (data) => api.post('/competitors', data),
+  sync: (id) => api.post(`/competitors/${id}/sync`),
+  remove: (id) => api.delete(`/competitors/${id}`),
+  getComparison: (params) => api.get('/competitors/comparison', { params }),
+  autoFind: (data) => api.post('/competitors/auto-find', data),
+  getInsights: (params) => api.get('/competitors/insights', { params }),
+}

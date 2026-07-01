@@ -6,9 +6,51 @@ exports.getAll = async (req, res) => {
   try {
     const businesses = await Business.find({ userId: req.userId })
     const businessIds = businesses.map(b => b._id)
-    const locations = await Location.find({ businessId: { $in: businessIds } })
-      .populate('businessId', 'name')
-    res.json({ locations })
+
+    const [locations, reviewStats] = await Promise.all([
+      Location.find({ businessId: { $in: businessIds } }).populate('businessId', 'name'),
+      require('../models/Review').aggregate([
+        { $match: { businessId: { $in: businessIds } } },
+        {
+          $group: {
+            _id: '$locationId',
+            avgRating: { $avg: '$rating' },
+            totalReviews: { $sum: 1 },
+            unansweredCount: { $sum: { $cond: [{ $eq: ['$isReplied', false] }, 1, 0] } },
+            positiveCount: { $sum: { $cond: [{ $eq: ['$sentiment', 'POSITIVE'] }, 1, 0] } },
+            negativeCount: { $sum: { $cond: [{ $eq: ['$sentiment', 'NEGATIVE'] }, 1, 0] } },
+            lastReviewAt: { $max: '$publishedAt' },
+          },
+        },
+      ]),
+    ])
+
+    const reviewStatsMap = new Map(reviewStats.map((item) => [String(item._id), item]))
+    const enrichedLocations = locations.map((location) => {
+      const stats = reviewStatsMap.get(String(location._id)) || null
+      const totalReviews = stats?.totalReviews || 0
+
+      return {
+        ...location.toObject(),
+        stats: stats ? {
+          avgRating: totalReviews ? Number((stats.avgRating || 0).toFixed(2)) : 0,
+          totalReviews,
+          unansweredCount: stats.unansweredCount || 0,
+          positivePercent: totalReviews ? Math.round((stats.positiveCount / totalReviews) * 100) : 0,
+          negativePercent: totalReviews ? Math.round((stats.negativeCount / totalReviews) * 100) : 0,
+          lastReviewAt: stats.lastReviewAt,
+        } : {
+          avgRating: 0,
+          totalReviews: 0,
+          unansweredCount: 0,
+          positivePercent: 0,
+          negativePercent: 0,
+          lastReviewAt: null,
+        },
+      }
+    })
+
+    res.json({ locations: enrichedLocations })
   } catch (err) {
     res.status(500).json({ message: err.message })
   }

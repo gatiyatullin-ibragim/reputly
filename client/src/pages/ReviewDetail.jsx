@@ -3,6 +3,31 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { reviewApi } from '../api'
 
+function Avatar({ name, size = 40 }) {
+  const letter = (name?.[0] || '?').toUpperCase()
+  const code = letter.charCodeAt(0)
+  let style = 'bg-[#fce7f3] text-[#be185d]'
+  if (code >= 65 && code <= 70) style = 'bg-[#eef0ff] text-[#5B5FEF]'
+  else if (code >= 71 && code <= 77) style = 'bg-[#e0f2fe] text-[#0284c7]'
+  else if (code >= 78 && code <= 83) style = 'bg-[#fef3c7] text-[#d97706]'
+
+  return (
+    <div className={`rounded-full flex items-center justify-center font-medium flex-shrink-0 ${style}`} style={{ width: size, height: size, fontSize: 11 }}>
+      {letter}
+    </div>
+  )
+}
+
+function SkeletonCard() {
+  return (
+    <div className="bg-white border border-[#e7ebf2] rounded-2xl p-6 animate-pulse">
+      <div className="h-5 w-40 rounded-full bg-[#f3f4f6] mb-4" />
+      <div className="h-4 w-3/4 rounded-full bg-[#f3f4f6] mb-2" />
+      <div className="h-4 w-2/3 rounded-full bg-[#f3f4f6]" />
+    </div>
+  )
+}
+
 export default function ReviewDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -29,116 +54,160 @@ export default function ReviewDetail() {
     },
   })
 
-  if (isLoading) return (
-    <div className="flex items-center justify-center h-full text-gray-400 text-sm">Загрузка...</div>
-  )
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+          <div className="xl:col-span-3 flex flex-col gap-4">
+            <SkeletonCard />
+            <SkeletonCard />
+          </div>
+          <div className="xl:col-span-2 flex flex-col gap-4">
+            <SkeletonCard />
+            <SkeletonCard />
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   const review = data
   const stars = '★'.repeat(review?.rating || 0) + '☆'.repeat(5 - (review?.rating || 0))
 
   const SENTIMENT_MAP = {
-    POSITIVE: { label: 'Позитивный', cls: 'bg-green-50 text-green-700' },
-    NEUTRAL:  { label: 'Нейтральный', cls: 'bg-gray-100 text-gray-600' },
-    NEGATIVE: { label: 'Негативный', cls: 'bg-red-50 text-red-600' },
+    POSITIVE: { label: 'Позитивный', cls: 'bg-[#dcfce7] text-[#16a34a]' },
+    NEUTRAL: { label: 'Нейтральный', cls: 'bg-[#f3f4f6] text-[#6b7280]' },
+    NEGATIVE: { label: 'Негативный', cls: 'bg-[#fee2e2] text-[#dc2626]' },
   }
 
   return (
-    <div className="p-6 max-w-2xl mx-auto flex flex-col gap-4">
-      <div className="flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="btn-secondary text-xs">← Назад</button>
-        <h1 className="text-base font-semibold">Отзыв</h1>
-        {review?.isReplied && (
-          <span className="ml-auto text-xs bg-green-50 text-green-600 px-2 py-0.5 rounded-full">
-            ✓ Отвечено
-          </span>
-        )}
-      </div>
-
-      {/* Review card */}
-      <div className="card p-5">
-        <div className="flex items-start gap-3 mb-3">
-          <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-sm font-semibold flex-shrink-0">
-            {review?.authorName?.[0]}
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <span className="font-medium">{review?.authorName}</span>
-              <span className="text-xs text-gray-400">{review?.platform}</span>
-              {review?.sentiment && (
-                <span className={`text-xs px-2 py-0.5 rounded-full ${SENTIMENT_MAP[review.sentiment]?.cls}`}>
-                  {SENTIMENT_MAP[review.sentiment]?.label}
-                </span>
-              )}
+    <div className="p-6">
+      <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+        <div className="xl:col-span-3 flex flex-col gap-4">
+          <div className="bg-white border border-[#e7ebf2] rounded-2xl p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+            <div className="flex items-center gap-3 mb-5">
+              <button onClick={() => navigate(-1)} className="btn-ghost text-xs">← Назад</button>
+              <h1 className="text-[20px] font-semibold text-[#111]">Отзыв</h1>
+              {review?.isReplied && <span className="badge-positive ml-auto">✓ Отвечено</span>}
             </div>
-            <div className="text-amber-500 text-sm mt-0.5">{stars}</div>
+
+            <div className="flex items-start gap-3 mb-4">
+              <Avatar name={review?.authorName} size={40} />
+              <div className="flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[14px] font-medium text-[#111]">{review?.authorName}</span>
+                  <span className="text-[11px] text-[#9ca3af]">{review?.platform}</span>
+                  {review?.sentiment && (
+                    <span className={`text-[11px] px-2 py-0.5 rounded-full ${SENTIMENT_MAP[review.sentiment]?.cls}`}>
+                      {SENTIMENT_MAP[review.sentiment]?.label}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-1 text-[12px]">
+                  <span className="text-[#f59e0b]">{stars.replace(/☆/g, '')}</span>
+                  <span className="text-[#e5e7eb]">{stars.replace(/★/g, '')}</span>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-[14px] text-[#374151] leading-relaxed whitespace-pre-wrap">
+              {review?.text || <span className="text-[#9ca3af] italic">Без текста</span>}
+            </p>
+            {review?.locationId?.name && <p className="text-[12px] text-[#9ca3af] mt-3">📍 {review.locationId.name}</p>}
           </div>
-        </div>
-        <p className="text-sm text-gray-700 leading-relaxed">
-          {review?.text || <span className="text-gray-400 italic">Без текста</span>}
-        </p>
-        {review?.locationId?.name && (
-          <p className="text-xs text-gray-400 mt-2">📍 {review.locationId.name}</p>
-        )}
-      </div>
 
-      {/* AI Reply section */}
-      <div className="card p-5">
-        <h2 className="text-sm font-semibold mb-4">Ответить на отзыв</h2>
+          <div className="bg-white border border-[#e7ebf2] rounded-2xl p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+            <h2 className="text-[14px] font-medium text-[#111] mb-4">Ответить на отзыв</h2>
+            <div className="flex gap-2 mb-4">
+              {[
+                { value: 'friendly', label: 'Дружелюбный' },
+                { value: 'formal', label: 'Официальный' },
+              ].map((item) => (
+                <button
+                  key={item.value}
+                  onClick={() => setStyle(item.value)}
+                  className={`btn-ghost text-[12px] ${style === item.value ? 'bg-[#111] text-white border-[#111] hover:bg-[#111]' : ''}`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
 
-        {/* Style toggle */}
-        <div className="flex gap-2 mb-4">
-          {[
-            { value: 'friendly', label: 'Дружелюбный' },
-            { value: 'formal',   label: 'Официальный' },
-          ].map((s) => (
             <button
-              key={s.value}
-              onClick={() => setStyle(s.value)}
-              className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
-                style === s.value
-                  ? 'bg-gray-900 text-white border-gray-900'
-                  : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-              }`}
+              onClick={() => generateMutation.mutate()}
+              disabled={generateMutation.isPending}
+              className="btn-brand w-full mb-4"
             >
-              {s.label}
+              {generateMutation.isPending ? 'Генерирую...' : '✨ Сгенерировать ответ'}
             </button>
-          ))}
-        </div>
 
-        <button
-          onClick={() => generateMutation.mutate()}
-          disabled={generateMutation.isPending}
-          className="btn-brand w-full mb-4"
-        >
-          {generateMutation.isPending ? 'Генерирую...' : '✨ Сгенерировать ответ'}
-        </button>
+            {(editedReply || review?.aiReply) && (
+              <div className="flex flex-col gap-3">
+                <textarea
+                  value={editedReply || review?.aiReply || ''}
+                  onChange={(e) => setEditedReply(e.target.value)}
+                  rows={5}
+                  className="input resize-none"
+                  placeholder="Ответ появится здесь..."
+                />
+                {!review?.isReplied && (
+                  <button
+                    onClick={() => replyMutation.mutate()}
+                    disabled={replyMutation.isPending}
+                    className="btn-ghost w-full"
+                  >
+                    {replyMutation.isPending ? 'Сохраняем...' : '✓ Отметить как отвеченный'}
+                  </button>
+                )}
+              </div>
+            )}
 
-        {(editedReply || review?.aiReply) && (
-          <div className="flex flex-col gap-3">
-            <textarea
-              value={editedReply || review?.aiReply || ''}
-              onChange={(e) => setEditedReply(e.target.value)}
-              rows={4}
-              className="input resize-none"
-              placeholder="Ответ появится здесь..."
-            />
-            {!review?.isReplied && (
-              <button
-                onClick={() => replyMutation.mutate()}
-                disabled={replyMutation.isPending}
-                className="btn-secondary w-full"
-              >
-                {replyMutation.isPending ? 'Сохраняем...' : '✓ Отметить как отвеченный'}
-              </button>
+            {generateMutation.isError && (
+              <p className="text-[12px] text-[#ef4444] mt-3">
+                Ошибка: {generateMutation.error?.response?.data?.message || 'Попробуйте ещё раз'}
+              </p>
             )}
           </div>
-        )}
+        </div>
 
-        {generateMutation.isError && (
-          <p className="text-xs text-red-500 mt-2">
-            Ошибка: {generateMutation.error?.response?.data?.message || 'Попробуйте ещё раз'}
-          </p>
-        )}
+        <div className="xl:col-span-2 flex flex-col gap-4">
+          <div className="bg-white border border-[#e7ebf2] rounded-2xl p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+            <h3 className="text-[14px] font-medium text-[#111] mb-4">Информация</h3>
+            <div className="flex flex-col gap-3 text-[13px] text-[#374151]">
+              <div className="flex items-center justify-between">
+                <span className="text-[#9ca3af]">Платформа</span>
+                <span>{review?.platform}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[#9ca3af]">Рейтинг</span>
+                <span>{review?.rating} / 5</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[#9ca3af]">Статус</span>
+                <span>{review?.isReplied ? 'Отвечен' : 'Требует ответа'}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[#9ca3af]">Дата</span>
+                <span>{review?.publishedAt ? new Date(review.publishedAt).toLocaleDateString('ru') : '—'}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[#9ca3af]">Точка</span>
+                <span className="text-right">{review?.locationId?.name || '—'}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-[#0f172a] rounded-2xl p-6 text-white shadow-[0_1px_2px_rgba(15,23,42,0.08)]">
+            <p className="text-[11px] uppercase tracking-wider text-white/50 mb-2">Клиент</p>
+            <div className="flex items-center gap-3">
+              <Avatar name={review?.authorName} size={44} />
+              <div>
+                <p className="text-[16px] font-medium">{review?.authorName}</p>
+                <p className="text-[12px] text-white/50">{review?.authorAvatar ? 'Есть аватар' : 'Без аватара'}</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )

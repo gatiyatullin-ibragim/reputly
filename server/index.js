@@ -25,6 +25,8 @@ app.use('/api/businesses', require('./src/routes/business.routes'))
 app.use('/api/locations',  require('./src/routes/location.routes'))
 app.use('/api/reviews',    require('./src/routes/review.routes'))
 app.use('/api/analytics',  require('./src/routes/analytics.routes'))
+app.use('/api/instagram',  require('./src/routes/instagram.routes'))
+app.use('/api/competitors', require('./src/routes/competitor.routes'))
 
 // ── Health check ───────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }))

@@ -1,16 +1,36 @@
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { AnimatePresence, motion } from 'framer-motion'
+import {
+  LayoutDashboard,
+  MessageSquareMore,
+  ChartColumn,
+  MapPinned,
+  Users,
+  Settings2,
+  LogOut,
+} from 'lucide-react'
 import { useAuthStore } from '../../store/useAuthStore'
 
 const nav = [
-  { to: '/',          label: 'Дашборд',   icon: '' },
-  { to: '/reviews',   label: 'Отзывы',    icon: '' },
-  { to: '/analytics', label: 'Аналитика', icon: '' },
-  { to: '/locations', label: 'Точки',     icon: '' },
-  { to: '/settings',  label: 'Настройки', icon: '' },
+  { to: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/reviews', label: 'Reviews', icon: MessageSquareMore },
+  { to: '/analytics', label: 'Analytics', icon: ChartColumn },
+  { to: '/locations', label: 'Locations', icon: MapPinned },
+  { to: '/competitors', label: 'Competitors', icon: Users },
+  { to: '/settings', label: 'Settings', icon: Settings2 },
 ]
+
+function avatarStyles(name) {
+  const letter = (name?.[0] || '').toUpperCase()
+  if ('ABCDEF'.includes(letter)) return 'bg-[#eef0ff] text-[#5B5FEF]'
+  if ('GHIJKLM'.includes(letter)) return 'bg-[#e0f2fe] text-[#0284c7]'
+  if ('NOPQRS'.includes(letter)) return 'bg-[#fef3c7] text-[#d97706]'
+  return 'bg-[#fce7f3] text-[#be185d]'
+}
 
 export default function Layout() {
   const { user, logout } = useAuthStore()
+  const location = useLocation()
   const navigate = useNavigate()
 
   const handleLogout = async () => {
@@ -19,61 +39,87 @@ export default function Layout() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-page text-[#0f172a]">
       {/* Sidebar */}
-      <aside className="w-52 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
+      <aside className="w-[212px] bg-white/90 backdrop-blur-xl border-r border-border flex flex-col flex-shrink-0">
         {/* Logo */}
-        <div className="px-5 py-4 border-b border-gray-100">
-          <span className="text-base font-semibold">
-            Rep<span className="text-brand-500">Monitor</span>
+        <div className="px-5 py-5 border-b border-border">
+          <span className="text-[16px] font-semibold tracking-tight text-[#0f172a]">
+            Revi
           </span>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 py-3 px-2 flex flex-col gap-0.5">
-          {nav.map(({ to, label, icon }) => (
+        <nav className="flex-1 py-4 px-3 flex flex-col gap-1.5">
+          {nav.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}
               end={to === '/'}
-              className={({ isActive }) =>
-                `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
-                  isActive
-                    ? 'bg-gray-100 text-gray-900 font-medium'
-                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                }`
-              }
+              className="relative overflow-hidden"
             >
-              <span>{icon}</span>
-              {label}
+              {({ isActive }) => (
+                <motion.div
+                  className={`relative flex items-center gap-3 px-3.5 py-2.5 rounded-[14px] text-[13px] border border-transparent transition-colors ${
+                    isActive
+                      ? 'text-[#0f172a]'
+                      : 'text-[#94a3b8] hover:text-[#0f172a]'
+                  }`}
+                  whileHover={{ scale: 1.01 }}
+                  transition={{ duration: 0.18 }}
+                >
+                  {isActive && (
+                    <motion.span
+                      layoutId="sidebar-active"
+                      className="absolute inset-0 rounded-[14px] bg-[#eef0ff] border border-[#dadafe]"
+                      transition={{ type: 'spring', stiffness: 420, damping: 36 }}
+                    />
+                  )}
+                  <span className={`relative z-10 flex items-center justify-center ${isActive ? 'text-brand-500' : ''}`}>
+                    <Icon size={16} strokeWidth={1.8} />
+                  </span>
+                  <span className="relative z-10 font-medium">{label}</span>
+                </motion.div>
+              )}
             </NavLink>
           ))}
         </nav>
 
         {/* User */}
-        <div className="p-3 border-t border-gray-100">
+        <div className="p-3 border-t border-border bg-[#fbfcfe]">
           <div className="flex items-center gap-2 px-2 py-1.5">
-            <div className="w-7 h-7 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-medium flex-shrink-0">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-semibold flex-shrink-0 ${avatarStyles(user?.name)}`}>
               {user?.name?.[0]?.toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium truncate">{user?.name}</p>
-              <p className="text-xs text-gray-400 truncate">{user?.plan}</p>
+              <p className="text-[13px] font-medium truncate text-[#0f172a]">{user?.name}</p>
+              <p className="text-[12px] text-[#9ca3af] truncate">{user?.plan}</p>
             </div>
             <button
               onClick={handleLogout}
-              className="text-xs text-gray-400 hover:text-gray-700 transition-colors"
-              title="Выйти"
+              className="text-[#9ca3af] hover:text-[#0f172a] transition-colors"
+              title="Logout"
             >
-              ⎋
+              <LogOut size={15} strokeWidth={1.8} />
             </button>
           </div>
         </div>
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto">
-        <Outlet />
+      <main className="flex-1 overflow-hidden">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 10, filter: 'blur(4px)' }}
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, y: -10, filter: 'blur(4px)' }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+            className="min-h-screen"
+          >
+            <Outlet />
+          </motion.div>
+        </AnimatePresence>
       </main>
     </div>
   )

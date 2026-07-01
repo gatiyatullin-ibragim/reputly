@@ -8,6 +8,8 @@ import Reviews    from './pages/Reviews'
 import ReviewDetail from './pages/ReviewDetail'
 import Analytics  from './pages/Analytics'
 import Locations  from './pages/Locations'
+import InstagramCallback from './pages/InstagramCallback'
+import Competitors from './pages/Competitors'
 import Settings   from './pages/Settings'
 import Onboarding from './pages/Onboarding'
 import Layout     from './components/layout/Layout'
@@ -31,6 +33,7 @@ export default function App() {
 
       {/* Онбординг */}
       <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+      <Route path="/instagram/callback" element={<ProtectedRoute><InstagramCallback /></ProtectedRoute>} />
 
       {/* Защищённые страницы с Layout */}
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
@@ -39,6 +42,7 @@ export default function App() {
         <Route path="reviews/:id" element={<ReviewDetail />} />
         <Route path="analytics"   element={<Analytics />} />
         <Route path="locations"   element={<Locations />} />
+        <Route path="competitors" element={<Competitors />} />
         <Route path="settings"    element={<Settings />} />
       </Route>
 
