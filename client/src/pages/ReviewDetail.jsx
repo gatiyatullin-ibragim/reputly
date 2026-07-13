@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { reviewApi } from '../api'
+import { useLanguageStore } from '../store/useLanguageStore'
 
 function Avatar({ name, size = 40 }) {
   const letter = (name?.[0] || '?').toUpperCase()
@@ -32,6 +33,7 @@ export default function ReviewDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { t } = useLanguageStore()
   const [style, setStyle] = useState('friendly')
   const [editedReply, setEditedReply] = useState('')
 
@@ -75,9 +77,9 @@ export default function ReviewDetail() {
   const stars = '★'.repeat(review?.rating || 0) + '☆'.repeat(5 - (review?.rating || 0))
 
   const SENTIMENT_MAP = {
-    POSITIVE: { label: 'Позитивный', cls: 'bg-[#dcfce7] text-[#16a34a]' },
-    NEUTRAL: { label: 'Нейтральный', cls: 'bg-[#f3f4f6] text-[#6b7280]' },
-    NEGATIVE: { label: 'Негативный', cls: 'bg-[#fee2e2] text-[#dc2626]' },
+    POSITIVE: { label: t('reviews.sentiment') + ' (+)', cls: 'bg-[#dcfce7] text-[#16a34a]' },
+    NEUTRAL: { label: 'Neutral', cls: 'bg-[#f3f4f6] text-[#6b7280]' },
+    NEGATIVE: { label: t('reviews.sentiment') + ' (-)', cls: 'bg-[#fee2e2] text-[#dc2626]' },
   }
 
   return (
@@ -86,9 +88,9 @@ export default function ReviewDetail() {
         <div className="xl:col-span-3 flex flex-col gap-4">
           <div className="bg-white border border-[#e7ebf2] rounded-2xl p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
             <div className="flex items-center gap-3 mb-5">
-              <button onClick={() => navigate(-1)} className="btn-ghost text-xs">← Назад</button>
-              <h1 className="text-[20px] font-semibold text-[#111]">Отзыв</h1>
-              {review?.isReplied && <span className="badge-positive ml-auto">✓ Отвечено</span>}
+              <button onClick={() => navigate(-1)} className="btn-ghost text-xs">← {t('onboarding.back')}</button>
+              <h1 className="text-[20px] font-semibold text-[#111]">{t('reviews.title')}</h1>
+              {review?.isReplied && <span className="badge-positive ml-auto">✓ {t('reviews.replied')}</span>}
             </div>
 
             <div className="flex items-start gap-3 mb-4">
@@ -111,17 +113,17 @@ export default function ReviewDetail() {
             </div>
 
             <p className="text-[14px] text-[#374151] leading-relaxed whitespace-pre-wrap">
-              {review?.text || <span className="text-[#9ca3af] italic">Без текста</span>}
+              {review?.text || <span className="text-[#9ca3af] italic">{t('reviews.draft')}</span>}
             </p>
             {review?.locationId?.name && <p className="text-[12px] text-[#9ca3af] mt-3">📍 {review.locationId.name}</p>}
           </div>
 
           <div className="bg-white border border-[#e7ebf2] rounded-2xl p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-            <h2 className="text-[14px] font-medium text-[#111] mb-4">Ответить на отзыв</h2>
+            <h2 className="text-[14px] font-medium text-[#111] mb-4">{t('reviews.reply')}</h2>
             <div className="flex gap-2 mb-4">
               {[
-                { value: 'friendly', label: 'Дружелюбный' },
-                { value: 'formal', label: 'Официальный' },
+                { value: 'friendly', label: t('reviews.styleFriendly') },
+                { value: 'formal', label: t('reviews.styleFormal') },
               ].map((item) => (
                 <button
                   key={item.value}
@@ -138,7 +140,7 @@ export default function ReviewDetail() {
               disabled={generateMutation.isPending}
               className="btn-brand w-full mb-4"
             >
-              {generateMutation.isPending ? 'Генерирую...' : '✨ Сгенерировать ответ'}
+              {generateMutation.isPending ? t('reviews.generating') : '✨ ' + t('reviews.generate')}
             </button>
 
             {(editedReply || review?.aiReply) && (
@@ -148,7 +150,7 @@ export default function ReviewDetail() {
                   onChange={(e) => setEditedReply(e.target.value)}
                   rows={5}
                   className="input resize-none"
-                  placeholder="Ответ появится здесь..."
+                  placeholder={t('reviews.draft')}
                 />
                 {!review?.isReplied && (
                   <button
@@ -156,7 +158,7 @@ export default function ReviewDetail() {
                     disabled={replyMutation.isPending}
                     className="btn-ghost w-full"
                   >
-                    {replyMutation.isPending ? 'Сохраняем...' : '✓ Отметить как отвеченный'}
+                    {replyMutation.isPending ? t('reviews.generating') : '✓ ' + t('reviews.replied')}
                   </button>
                 )}
               </div>
@@ -164,7 +166,7 @@ export default function ReviewDetail() {
 
             {generateMutation.isError && (
               <p className="text-[12px] text-[#ef4444] mt-3">
-                Ошибка: {generateMutation.error?.response?.data?.message || 'Попробуйте ещё раз'}
+                Error: {generateMutation.error?.response?.data?.message || 'Try again'}
               </p>
             )}
           </div>
@@ -172,38 +174,38 @@ export default function ReviewDetail() {
 
         <div className="xl:col-span-2 flex flex-col gap-4">
           <div className="bg-white border border-[#e7ebf2] rounded-2xl p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-            <h3 className="text-[14px] font-medium text-[#111] mb-4">Информация</h3>
+            <h3 className="text-[14px] font-medium text-[#111] mb-4">Info</h3>
             <div className="flex flex-col gap-3 text-[13px] text-[#374151]">
               <div className="flex items-center justify-between">
-                <span className="text-[#9ca3af]">Платформа</span>
+                <span className="text-[#9ca3af]">Platform</span>
                 <span>{review?.platform}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[#9ca3af]">Рейтинг</span>
+                <span className="text-[#9ca3af]">{t('reviews.rating')}</span>
                 <span>{review?.rating} / 5</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[#9ca3af]">Статус</span>
-                <span>{review?.isReplied ? 'Отвечен' : 'Требует ответа'}</span>
+                <span className="text-[#9ca3af]">Status</span>
+                <span>{review?.isReplied ? t('reviews.replied') : t('reviews.unanswered')}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[#9ca3af]">Дата</span>
+                <span className="text-[#9ca3af]">Date</span>
                 <span>{review?.publishedAt ? new Date(review.publishedAt).toLocaleDateString('ru') : '—'}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[#9ca3af]">Точка</span>
+                <span className="text-[#9ca3af]">Branch</span>
                 <span className="text-right">{review?.locationId?.name || '—'}</span>
               </div>
             </div>
           </div>
 
           <div className="bg-[#0f172a] rounded-2xl p-6 text-white shadow-[0_1px_2px_rgba(15,23,42,0.08)]">
-            <p className="text-[11px] uppercase tracking-wider text-white/50 mb-2">Клиент</p>
+            <p className="text-[11px] uppercase tracking-wider text-white/50 mb-2">Client</p>
             <div className="flex items-center gap-3">
               <Avatar name={review?.authorName} size={44} />
               <div>
                 <p className="text-[16px] font-medium">{review?.authorName}</p>
-                <p className="text-[12px] text-white/50">{review?.authorAvatar ? 'Есть аватар' : 'Без аватара'}</p>
+                <p className="text-[12px] text-white/50">{review?.authorAvatar ? 'Has avatar' : 'No avatar'}</p>
               </div>
             </div>
           </div>
@@ -212,3 +214,4 @@ export default function ReviewDetail() {
     </div>
   )
 }
+

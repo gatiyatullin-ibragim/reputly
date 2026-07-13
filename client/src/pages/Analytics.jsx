@@ -6,19 +6,12 @@ import {
 } from 'recharts'
 import { BrainCircuit, Sparkles, TrendingUp, MessageSquareMore, Target, ArrowUpRight } from 'lucide-react'
 import { analyticsApi } from '../api'
-
-const PLATFORM_COLORS = {
-  GOOGLE: '#5B5FEF',
-  TWOGIS: '#10B981',
-  YANDEX: '#f0d433',
-  AVITO: '#38BDF8',
-  INSTAGRAM: '#EC4899',
-}
+import { useLanguageStore } from '../store/useLanguageStore'
 
 const PLATFORM_LABELS = {
   GOOGLE: 'Google',
   TWOGIS: '2GIS',
-  YANDEX: 'Яндекс',
+  YANDEX: 'Yandex',
   AVITO: 'Avito',
   INSTAGRAM: 'Instagram',
 }
@@ -77,6 +70,7 @@ function toneLabel(percent) {
 }
 
 export default function Analytics() {
+  const { t } = useLanguageStore()
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard'],
     queryFn: () => analyticsApi.getDashboard().then((r) => r.data),
@@ -103,17 +97,16 @@ export default function Analytics() {
     ? Number((weeklyReviews[weeklyReviews.length - 1]?.avgRating - weeklyReviews[weeklyReviews.length - 2]?.avgRating).toFixed(1))
     : 0
 
-  const strongestPlatform = [...(byPlatform || [])].sort((left, right) => right.avgRating - left.avgRating)[0]
   const complaintTopic = negativePercent > 0 ? (keywords[0]?.word || 'speed') : 'low complaint volume'
   const praiseTopic = keywords[0]?.word || 'service'
 
   return (
     <div className="p-6 flex flex-col gap-5">
       <header>
-        <p className="text-[11px] uppercase tracking-[0.24em] text-[#94a3b8]">Understanding the signal</p>
+        <p className="text-[11px] uppercase tracking-[0.24em] text-[#94a3b8]">{t('analytics.title')}</p>
         <h1 className="text-[28px] md:text-[34px] font-semibold tracking-tight text-[#0f172a] mt-2">Analytics that explain themselves</h1>
         <p className="text-[13px] text-[#64748b] mt-2 max-w-2xl">
-          Revi turns sentiment and rating movement into clear narrative blocks so you know what to fix and what to double down on.
+          {t('analytics.subtitle')}
         </p>
       </header>
 
@@ -126,7 +119,7 @@ export default function Analytics() {
           <p className="text-[22px] font-semibold tracking-tight leading-tight">
             {totalReviews
               ? `Your reputation is ${toneLabel(positivePercent)}: ${positivePercent}% positive, ${negativePercent}% negative.`
-              : 'Connect reviews to unlock insights.'}
+              : t('dashboard.noReviews')}
           </p>
           <div className="grid sm:grid-cols-3 gap-3 mt-5">
             <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
@@ -163,7 +156,7 @@ export default function Analytics() {
         <div className="xl:col-span-8 rounded-2xl border border-[#e7ebf2] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-[14px] font-medium text-[#0f172a]">Rating movement</p>
+              <p className="text-[14px] font-medium text-[#0f172a]">{t('analytics.reviewsTrend')}</p>
               <p className="text-[12px] text-[#94a3b8] mt-0.5">How sentiment changed over the past four weeks</p>
             </div>
             <span className="text-[11px] uppercase tracking-[0.22em] text-[#94a3b8]">trend</span>
@@ -174,7 +167,7 @@ export default function Analytics() {
               <XAxis dataKey="_id" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis domain={[1, 5]} tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
               <Tooltip content={<TooltipCard />} />
-              <Line type="monotone" dataKey="avgRating" name="Average rating" stroke="#5B5FEF" strokeWidth={2.5} dot={{ r: 3 }} />
+              <Line type="monotone" dataKey="avgRating" name={t('analytics.avgRating')} stroke="#5B5FEF" strokeWidth={2.5} dot={{ r: 3 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -231,7 +224,7 @@ export default function Analytics() {
 
         <div className="rounded-2xl border border-[#e7ebf2] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           <div className="flex items-center justify-between mb-4">
-            <p className="text-[14px] font-medium text-[#0f172a]">Platform explanation</p>
+            <p className="text-[14px] font-medium text-[#0f172a]">{t('analytics.platformDistribution')}</p>
             <ArrowUpRight size={16} className="text-[#94a3b8]" />
           </div>
           <div className="flex flex-col gap-3">
@@ -239,7 +232,7 @@ export default function Analytics() {
               <div key={item._id} className="rounded-2xl bg-[#f8fafc] border border-[#e7ebf2] p-4 flex items-center justify-between">
                 <div>
                   <p className="text-[13px] font-medium text-[#0f172a]">{PLATFORM_LABELS[item._id] || item._id}</p>
-                  <p className="text-[12px] text-[#64748b] mt-0.5">{item.count} reviews</p>
+                  <p className="text-[12px] text-[#64748b] mt-0.5">{item.count} {t('analytics.totalReviews').toLowerCase()}</p>
                 </div>
                 <span className="text-[12px] font-medium text-[#5B5FEF]">{item.avgRating?.toFixed?.(1) || '0.0'}</span>
               </div>
@@ -266,7 +259,7 @@ export default function Analytics() {
       <section className="rounded-2xl border border-[#e7ebf2] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <p className="text-[14px] font-medium text-[#0f172a]">Review velocity</p>
+            <p className="text-[14px] font-medium text-[#0f172a]">{t('analytics.sentimentOverTime')}</p>
             <p className="text-[12px] text-[#94a3b8] mt-0.5">Volume and sentiment by week</p>
           </div>
           <span className="text-[11px] uppercase tracking-[0.22em] text-[#94a3b8]">volume</span>

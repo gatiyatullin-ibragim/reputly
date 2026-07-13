@@ -6,6 +6,7 @@ import {
 } from 'recharts'
 import { ArrowUpRight, BrainCircuit, Clock3, MessageSquareMore, Sparkles, TriangleAlert, TrendingUp, Activity } from 'lucide-react'
 import { analyticsApi } from '../api'
+import { useLanguageStore } from '../store/useLanguageStore'
 
 const PLATFORM_COLORS = {
   GOOGLE: '#5B5FEF',
@@ -52,34 +53,38 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value))
 }
 
-function StatCard({ icon: Icon, label, value, sub, tone = 'light' }) {
-  const base = 'rounded-2xl border p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]'
+function StatCard({ icon: Icon, label, value, sub, tone = 'light', className = '' }) {
+  const base = `rounded-2xl border p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] ${className}`
 
   if (tone === 'dark') {
     return (
-      <div className={`${base} bg-[#0f172a] border-[#0f172a] text-white`}>
+      <div className={`${base} bg-[#0f172a] border-[#0f172a] text-white flex flex-col justify-between min-h-[160px]`}>
         <div className="flex items-center justify-between mb-4">
           <div className="rounded-xl bg-white/10 p-2">
             <Icon size={16} strokeWidth={1.8} />
           </div>
           {sub && <span className="text-[11px] text-white/50">{sub}</span>}
         </div>
-        <p className="text-[11px] uppercase tracking-[0.22em] text-white/45">{label}</p>
-        <p className="text-[40px] font-semibold leading-none mt-3"><AnimatedNumber value={value} /></p>
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.22em] text-white/45">{label}</p>
+          <p className="text-[40px] font-semibold leading-none mt-3"><AnimatedNumber value={value} /></p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className={`${base} bg-white border-[#e7ebf2]`}>
+    <div className={`${base} bg-white border-[#e7ebf2] flex flex-col justify-between min-h-[160px]`}>
       <div className="flex items-center justify-between mb-4">
         <div className="rounded-xl bg-[#eef0ff] text-[#5B5FEF] p-2">
           <Icon size={16} strokeWidth={1.8} />
         </div>
         {sub && <span className="text-[11px] text-[#94a3b8]">{sub}</span>}
       </div>
-      <p className="text-[11px] uppercase tracking-[0.22em] text-[#94a3b8]">{label}</p>
-      <p className="text-[38px] font-semibold leading-none mt-3 text-[#0f172a]"><AnimatedNumber value={value} /></p>
+      <div>
+        <p className="text-[11px] uppercase tracking-[0.22em] text-[#94a3b8]">{label}</p>
+        <p className="text-[38px] font-semibold leading-none mt-3 text-[#0f172a]"><AnimatedNumber value={value} /></p>
+      </div>
     </div>
   )
 }
@@ -99,7 +104,7 @@ function TooltipCard({ active, payload, label }) {
   )
 }
 
-function buildAiSummary(stats, weeklyReviews, recentReviews) {
+function buildAiSummary(stats, weeklyReviews, recentReviews, t) {
   const totalReviews = stats?.totalReviews || 0
   const unanswered = stats?.unansweredCount || 0
   const latestWeek = weeklyReviews?.[weeklyReviews.length - 1]
@@ -108,26 +113,27 @@ function buildAiSummary(stats, weeklyReviews, recentReviews) {
   const latestPlatform = recentReviews?.[0]?.platform
 
   if (!totalReviews) {
-    return 'No reviews yet. Connect locations to start receiving reputation signals.'
+    return t('dashboard.noReviews')
   }
 
   const firstSentence = delta >= 0
-    ? 'Your reputation improved this week.'
-    : 'Your reputation needs attention this week.'
+    ? t('dashboard.sentimentAware') + ': ' + t('dashboard.ratingTrend') + ' +' + delta
+    : t('dashboard.sentimentAware') + ': ' + t('dashboard.ratingTrend') + ' ' + delta
 
   const secondSentence = latestPlatform
-    ? `Customers are mostly coming from ${PLATFORM_LABELS[latestPlatform] || latestPlatform}.`
-    : 'Platform mix is still forming.'
+    ? `Platform: ${PLATFORM_LABELS[latestPlatform] || latestPlatform}.`
+    : ''
 
   const thirdSentence = unanswered > 0
-    ? `${unanswered} reviews still need replies.`
-    : 'Reply queue is clear.'
+    ? t('reviews.unanswered') + ': ' + unanswered
+    : t('dashboard.replyReady')
 
-  return `${firstSentence} ${secondSentence} ${thirdSentence}`
+  return `${firstSentence}. ${secondSentence} ${thirdSentence}`
 }
 
 export default function Dashboard() {
   const navigate = useNavigate()
+  const { t } = useLanguageStore()
 
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard'],
@@ -154,73 +160,64 @@ export default function Dashboard() {
   const weeklyDelta = weeklyReviews?.length > 1
     ? Number((weeklyReviews[weeklyReviews.length - 1]?.avgRating - weeklyReviews[weeklyReviews.length - 2]?.avgRating).toFixed(1))
     : 0
-  const aiSummary = buildAiSummary(stats, weeklyReviews, recentReviews)
+  const aiSummary = buildAiSummary(stats, weeklyReviews, recentReviews, t)
   const urgentReviews = recentReviews?.filter((review) => !review.isReplied).length || 0
-
-  const latestActivities = [
-    {
-      title: `${stats?.totalReviews || 0} reviews under monitoring`,
-      subtitle: 'All connected platforms feed into one inbox',
-      icon: Activity,
-    },
-    {
-      title: `${unansweredCount} reviews waiting for reply`,
-      subtitle: unansweredCount > 0 ? 'Focus on unanswered conversations now' : 'Reply queue is clear',
-      icon: MessageSquareMore,
-    },
-    {
-      title: weeklyDelta >= 0 ? `Rating trend +${weeklyDelta}` : `Rating trend ${weeklyDelta}`,
-      subtitle: 'Compared with the previous weekly slice',
-      icon: TrendingUp,
-    },
-  ]
 
   return (
     <div className="p-6 flex flex-col gap-5">
       <header className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.24em] text-[#94a3b8]">Reputation command center</p>
-          <h1 className="text-[28px] md:text-[34px] font-semibold tracking-tight text-[#0f172a] mt-2">Control your reputation in one place</h1>
+          <p className="text-[11px] uppercase tracking-[0.24em] text-[#94a3b8]">{t('header.reputationCenter')}</p>
+          <h1 className="text-[28px] md:text-[34px] font-semibold tracking-tight text-[#0f172a] mt-2">{t('header.title')}</h1>
           <p className="text-[13px] text-[#64748b] mt-2 max-w-2xl">
-            Revi tracks reviews, summarizes customer sentiment, and highlights the exact moments that need your attention.
+            {t('header.subtitle')}
           </p>
         </div>
         <button onClick={() => navigate('/locations')} className="btn-brand">
-          + Add location
+          {t('header.addLocation')}
         </button>
       </header>
 
       <section className="grid grid-cols-1 xl:grid-cols-12 gap-4">
-        <StatCard icon={Sparkles} label="Reputation Score" value={score} sub={`${weeklyDelta >= 0 ? '+' : ''}${weeklyDelta || 0} this week`} tone="dark" />
+        <StatCard
+          className="xl:col-span-5"
+          icon={Sparkles}
+          label={t('dashboard.reputationScore')}
+          value={score}
+          sub={`${weeklyDelta >= 0 ? '+' : ''}${weeklyDelta || 0} ${t('dashboard.ratingTrend')}`}
+          tone="dark"
+        />
 
-        <div className="xl:col-span-4 rounded-2xl border border-[#e7ebf2] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+        <div className="xl:col-span-4 rounded-2xl border border-[#e7ebf2] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col justify-between min-h-[160px]">
           <div className="flex items-center justify-between mb-4">
             <div className="rounded-xl bg-[#eef0ff] p-2 text-[#5B5FEF]">
               <BrainCircuit size={16} strokeWidth={1.8} />
             </div>
-            <span className="text-[11px] uppercase tracking-[0.22em] text-[#94a3b8]">AI Summary</span>
+            <span className="text-[11px] uppercase tracking-[0.22em] text-[#94a3b8]">{t('dashboard.aiSummary')}</span>
           </div>
-          <p className="text-[22px] font-semibold tracking-tight text-[#0f172a] leading-tight">
+          <p className="text-[16px] md:text-[18px] font-semibold tracking-tight text-[#0f172a] leading-tight">
             {aiSummary}
           </p>
-          <div className="mt-5 flex items-center gap-2 flex-wrap">
-            <span className="badge-neutral">Sentiment-aware</span>
-            <span className="badge-neutral">Auto-prioritized</span>
-            <span className="badge-neutral">Reply-ready</span>
+          <div className="mt-4 flex items-center gap-2 flex-wrap">
+            <span className="badge-neutral">{t('dashboard.sentimentAware')}</span>
+            <span className="badge-neutral">{t('dashboard.autoPrioritized')}</span>
+            <span className="badge-neutral">{t('dashboard.replyReady')}</span>
           </div>
         </div>
 
-        <div className="xl:col-span-3 rounded-2xl border border-[#e7ebf2] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+        <div className="xl:col-span-3 rounded-2xl border border-[#e7ebf2] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col justify-between min-h-[160px]">
           <div className="flex items-center justify-between mb-4">
             <div className="rounded-xl bg-[#fff7ed] p-2 text-[#f59e0b]">
               <TriangleAlert size={16} strokeWidth={1.8} />
             </div>
-            <span className="text-[11px] uppercase tracking-[0.22em] text-[#94a3b8]">Urgent</span>
+            <span className="text-[11px] uppercase tracking-[0.22em] text-[#94a3b8]">{t('dashboard.urgent')}</span>
           </div>
-          <p className="text-[36px] font-semibold tracking-tight text-[#0f172a] leading-none">{urgentReviews}</p>
-          <p className="text-[13px] text-[#64748b] mt-3">reviews waiting for reply</p>
+          <div>
+            <p className="text-[36px] font-semibold tracking-tight text-[#0f172a] leading-none">{urgentReviews}</p>
+            <p className="text-[13px] text-[#64748b] mt-3">{t('dashboard.urgentSub')}</p>
+          </div>
           <button onClick={() => navigate('/reviews?filter=unanswered')} className="mt-4 text-[13px] font-medium text-brand-500 inline-flex items-center gap-1">
-            Open inbox <ArrowUpRight size={14} />
+            {t('dashboard.openInbox')} <ArrowUpRight size={14} />
           </button>
         </div>
       </section>
@@ -229,10 +226,10 @@ export default function Dashboard() {
         <div className="xl:col-span-8 rounded-2xl border border-[#e7ebf2] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-[14px] font-medium text-[#0f172a]">Recent changes</p>
-              <p className="text-[12px] text-[#94a3b8] mt-0.5">What shifted in the last seven days</p>
+              <p className="text-[14px] font-medium text-[#0f172a]">{t('dashboard.recentChanges')}</p>
+              <p className="text-[12px] text-[#94a3b8] mt-0.5">{t('dashboard.recentChangesSub')}</p>
             </div>
-            <span className="text-[11px] uppercase tracking-[0.22em] text-[#94a3b8]">live</span>
+            <span className="text-[11px] uppercase tracking-[0.22em] text-[#94a3b8]">{t('dashboard.live')}</span>
           </div>
 
           <ResponsiveContainer width="100%" height={240}>
@@ -248,8 +245,8 @@ export default function Dashboard() {
         <div className="xl:col-span-4 rounded-2xl border border-[#e7ebf2] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-[14px] font-medium text-[#0f172a]">Latest activity</p>
-              <p className="text-[12px] text-[#94a3b8] mt-0.5">Most recent signals across channels</p>
+              <p className="text-[14px] font-medium text-[#0f172a]">{t('dashboard.recentReviews')}</p>
+              <p className="text-[12px] text-[#94a3b8] mt-0.5">{t('dashboard.recentReviewsSub')}</p>
             </div>
             <Clock3 size={16} className="text-[#94a3b8]" />
           </div>
@@ -278,8 +275,8 @@ export default function Dashboard() {
       <section className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <div className="rounded-2xl border border-[#e7ebf2] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           <div className="flex items-center justify-between mb-4">
-            <p className="text-[14px] font-medium text-[#0f172a]">Platform mix</p>
-            <span className="text-[11px] uppercase tracking-[0.22em] text-[#94a3b8]">share</span>
+            <p className="text-[14px] font-medium text-[#0f172a]">{t('dashboard.platformShare')}</p>
+            <span className="text-[11px] uppercase tracking-[0.22em] text-[#94a3b8]">{t('dashboard.platformShareSub')}</span>
           </div>
 
           {byPlatform?.length ? (
@@ -307,22 +304,22 @@ export default function Dashboard() {
               </div>
             </>
           ) : (
-            <div className="py-10 text-center text-[13px] text-[#94a3b8]">No platform data yet.</div>
+            <div className="py-10 text-center text-[13px] text-[#94a3b8]">{t('dashboard.noReviews')}</div>
           )}
         </div>
 
-        <div className="xl:col-span-2 rounded-2xl border border-[#e7ebf2] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+        <div className="rounded-2xl border border-[#e7ebf2] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           <div className="flex items-center justify-between mb-4">
-            <p className="text-[14px] font-medium text-[#0f172a]">Urgent work</p>
+            <p className="text-[14px] font-medium text-[#0f172a]">{t('dashboard.waitingReply')}</p>
             <Sparkles size={16} className="text-brand-500" />
           </div>
           <div className="flex flex-col gap-3">
             <div className="rounded-2xl bg-[#eef0ff] p-4 border border-[#dadafe]">
-              <p className="text-[12px] text-[#5B5FEF] uppercase tracking-[0.22em]">Open replies</p>
+              <p className="text-[12px] text-[#5B5FEF] uppercase tracking-[0.22em]">{t('reviews.unanswered')}</p>
               <p className="text-[30px] font-semibold text-[#0f172a] mt-2">{unansweredCount}</p>
             </div>
             <div className="rounded-2xl bg-[#f8fafc] p-4 border border-[#e7ebf2]">
-              <p className="text-[12px] text-[#64748b]">Action window</p>
+              <p className="text-[12px] text-[#64748b]">{t('dashboard.waitingReplySub')}</p>
               <p className="text-[15px] font-medium text-[#0f172a] mt-1">Reply within 1 hour keeps the inbox calm.</p>
             </div>
           </div>
@@ -330,9 +327,9 @@ export default function Dashboard() {
 
         <div className="rounded-2xl border border-[#e7ebf2] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           <div className="flex items-center justify-between mb-4">
-            <p className="text-[14px] font-medium text-[#0f172a]">Recent reviews</p>
+            <p className="text-[14px] font-medium text-[#0f172a]">{t('dashboard.recentReviews')}</p>
             <button onClick={() => navigate('/reviews')} className="text-[13px] font-medium text-brand-500 inline-flex items-center gap-1">
-              Open all <ArrowUpRight size={14} />
+              {t('reviews.viewDetail')} <ArrowUpRight size={14} />
             </button>
           </div>
 
@@ -352,13 +349,13 @@ export default function Dashboard() {
                 </div>
                 <p className="text-[12px] text-[#64748b] mt-3 line-clamp-2">{review.text || 'No text provided'}</p>
                 <div className="mt-3 flex items-center gap-2">
-                  {review.isReplied ? <span className="badge-positive">Replied</span> : <span className="badge-pending">Needs reply</span>}
-                  {review.sentiment === 'NEGATIVE' && <span className="badge-negative">Negative</span>}
+                  {review.isReplied ? <span className="badge-positive">{t('reviews.replied')}</span> : <span className="badge-pending">{t('reviews.unanswered')}</span>}
+                  {review.sentiment === 'NEGATIVE' && <span className="badge-negative">{t('reviews.sentiment')} (-)</span>}
                 </div>
               </button>
             )) : (
               <div className="rounded-2xl border border-dashed border-[#dbe2ef] p-8 text-center text-[13px] text-[#94a3b8]">
-                No recent reviews yet.
+                {t('dashboard.noReviews')}
               </div>
             )}
           </div>

@@ -4,6 +4,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts'
 import { businessApi, competitorApi } from '../api'
+import { useLanguageStore } from '../store/useLanguageStore'
 
 const NICHES = [
   { value: 'cafe', label: 'Cafe' },
@@ -57,15 +58,16 @@ function TooltipContent({ active, payload }) {
   const row = payload[0].payload
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-lg">
-      <p className="text-xs font-medium text-gray-900">{row.name}</p>
-      <p className="text-xs text-gray-500">Рейтинг: {row.avgRating.toFixed(2)}</p>
+    <div className="rounded-xl border border-[#e7ebf2] bg-white px-3 py-2 shadow-[0_1px_8px_rgba(15,23,42,0.06)]">
+      <p className="text-[12px] font-medium text-[#0f172a]">{row.name}</p>
+      <p className="text-[12px] text-[#64748b]">{row.avgRating.toFixed(2)}</p>
     </div>
   )
 }
 
 export default function Competitors() {
   const queryClient = useQueryClient()
+  const { t } = useLanguageStore()
   const [activeTab, setActiveTab] = useState('mine')
   const [showForm, setShowForm] = useState(false)
   const [selectedBusinessId, setSelectedBusinessId] = useState('')
@@ -174,7 +176,7 @@ export default function Competitors() {
   const tableRows = comparisonData
     ? [
       {
-        name: comparisonData.myBusiness?.name || 'Мой бизнес',
+        name: comparisonData.myBusiness?.name || t('competitors.title'),
         avgRating: comparisonData.myBusiness?.avgRating || 0,
         totalReviews: comparisonData.myBusiness?.totalReviews || 0,
         positivePercent: comparisonData.myBusiness?.positivePercent || 0,
@@ -248,46 +250,50 @@ export default function Competitors() {
   }
 
   return (
-    <div className="p-6 flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h1 className="text-lg font-semibold">Конкуренты</h1>
+    <div className="p-6 flex flex-col gap-5">
+      <header className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.24em] text-[#94a3b8]">{t('competitors.title')}</p>
+          <h1 className="text-[28px] md:text-[34px] font-semibold tracking-tight text-[#0f172a] mt-2">Competitor Intelligence</h1>
+          <p className="text-[13px] text-[#64748b] mt-2 max-w-2xl">{t('competitors.subtitle')}</p>
+        </div>
         <div className="flex gap-2">
           {['mine', 'comparison'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
+              className={`px-4 py-2 text-[12px] rounded-xl border transition-colors ${
                 activeTab === tab
-                  ? 'bg-gray-900 text-white border-gray-900'
-                  : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                  ? 'bg-[#0f172a] text-white border-[#0f172a]'
+                  : 'bg-white text-[#64748b] border-[#e7ebf2] hover:bg-[#f8fafc]'
               }`}
             >
-              {tab === 'mine' ? 'Мои конкуренты' : 'Сравнение'}
+              {tab === 'mine' ? t('competitors.addCompetitor').replace('Add', 'My') : 'Comparison'}
             </button>
           ))}
         </div>
-      </div>
+      </header>
 
       {activeTab === 'mine' ? (
         <>
-          <div className="card p-5">
+          <div className="rounded-2xl border border-[#e7ebf2] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
             <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
               <div>
-                <h2 className="text-sm font-semibold">AI-автопоиск конкурентов</h2>
-                <p className="text-xs text-gray-500 mt-1">Revi предложит и добавит конкурентов по названию бизнеса, городу и нише.</p>
+                <h2 className="text-[14px] font-medium text-[#0f172a]">AI Auto-find</h2>
+                <p className="text-[12px] text-[#94a3b8] mt-0.5">Revi will suggest and add competitors by business name, city, and niche.</p>
               </div>
               <button
                 onClick={handleAutoFind}
                 className="btn-brand text-xs"
                 disabled={autoFindMutation.isPending || !autoFindForm.businessId || !autoFindForm.city}
               >
-                {autoFindMutation.isPending ? 'Ищем...' : 'Найти конкурентов'}
+                {autoFindMutation.isPending ? 'Searching...' : 'Find Competitors'}
               </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <div>
-                <label className="label">Бизнес</label>
+                <label className="label">{t('onboarding.businessName')}</label>
                 <select
                   className="input"
                   value={autoFindForm.businessId}
@@ -298,32 +304,32 @@ export default function Competitors() {
                     setCreateForm((current) => ({ ...current, businessId }))
                   }}
                 >
-                  <option value="">Выберите бизнес</option>
+                  <option value="">{t('onboarding.businessName')}</option>
                   {businesses.map((business) => (
                     <option key={business._id} value={business._id}>{business.name}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="label">Город</label>
+                <label className="label">City</label>
                 <input
                   className="input"
                   value={autoFindForm.city}
                   onChange={(e) => setAutoFindForm((current) => ({ ...current, city: e.target.value }))}
-                  placeholder="Алматы"
+                  placeholder="Almaty"
                 />
               </div>
               <div>
-                <label className="label">Район</label>
+                <label className="label">District</label>
                 <input
                   className="input"
                   value={autoFindForm.district}
                   onChange={(e) => setAutoFindForm((current) => ({ ...current, district: e.target.value }))}
-                  placeholder="Центральный"
+                  placeholder="Central"
                 />
               </div>
               <div>
-                <label className="label">Ниша</label>
+                <label className="label">Niche</label>
                 <select
                   className="input"
                   value={autoFindForm.niche}
@@ -337,47 +343,47 @@ export default function Competitors() {
             </div>
 
             {autoFindResult && (
-              <div className="mt-4 rounded-xl border border-[#e8ecea] bg-[#f8f9fa] px-4 py-3 text-sm text-[#111]">
-                <p className="font-medium">{autoFindResult.message || 'AI-поиск завершён'}</p>
-                <p className="text-xs text-gray-500 mt-1">Добавлено конкурентов: {autoFindResult.total || 0}</p>
+              <div className="mt-4 rounded-2xl border border-[#e7ebf2] bg-[#f8fafc] px-4 py-3 text-[13px] text-[#0f172a]">
+                <p className="font-medium">{autoFindResult.message || 'AI search completed'}</p>
+                <p className="text-[12px] text-[#64748b] mt-1">Competitors added: {autoFindResult.total || 0}</p>
               </div>
             )}
           </div>
 
           <div className="flex justify-end">
             <button onClick={() => setShowForm((current) => !current)} className="btn-brand text-xs">
-              + Добавить конкурента
+              {t('competitors.addCompetitor')}
             </button>
           </div>
 
           {showForm && (
-            <div className="card p-5">
-              <h2 className="text-sm font-semibold mb-4">Новый конкурент</h2>
+            <div className="rounded-2xl border border-[#e7ebf2] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+              <h2 className="text-[14px] font-medium text-[#0f172a] mb-4">{t('competitors.addCompetitor')}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="md:col-span-2">
-                  <label className="label">Бизнес</label>
+                  <label className="label">{t('onboarding.businessName')}</label>
                   <select
                     className="input"
                     value={createForm.businessId}
                     onChange={(e) => setCreateForm((current) => ({ ...current, businessId: e.target.value }))}
                   >
-                    <option value="">Выберите бизнес</option>
+                    <option value="">{t('onboarding.businessName')}</option>
                     {businesses.map((business) => (
                       <option key={business._id} value={business._id}>{business.name}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="label">Название</label>
+                  <label className="label">{t('competitors.name')}</label>
                   <input
                     className="input"
                     value={createForm.name}
                     onChange={(e) => setCreateForm((current) => ({ ...current, name: e.target.value }))}
-                    placeholder="Кофе Хаус"
+                    placeholder="Coffee House"
                   />
                 </div>
                 <div>
-                  <label className="label">Google Maps ссылка / 2GIS ссылка</label>
+                  <label className="label">Google Maps / 2GIS link</label>
                   <input
                     className="input"
                     value={createForm.sourceLink}
@@ -386,25 +392,25 @@ export default function Competitors() {
                   />
                 </div>
                 <div>
-                  <label className="label">Город</label>
+                  <label className="label">City</label>
                   <input
                     className="input"
                     value={createForm.city}
                     onChange={(e) => setCreateForm((current) => ({ ...current, city: e.target.value }))}
-                    placeholder="Москва"
+                    placeholder="Almaty"
                   />
                 </div>
                 <div>
-                  <label className="label">Район</label>
+                  <label className="label">District</label>
                   <input
                     className="input"
                     value={createForm.district}
                     onChange={(e) => setCreateForm((current) => ({ ...current, district: e.target.value }))}
-                    placeholder="Центральный"
+                    placeholder="Central"
                   />
                 </div>
                 <div>
-                  <label className="label">Ниша</label>
+                  <label className="label">Niche</label>
                   <select
                     className="input"
                     value={createForm.niche}
@@ -423,10 +429,10 @@ export default function Competitors() {
                   className="btn-primary"
                   disabled={!createForm.businessId || !createForm.name || createMutation.isPending}
                 >
-                  {createMutation.isPending ? 'Сохраняем...' : 'Создать'}
+                  {createMutation.isPending ? t('reviews.generating') : t('competitors.addCompetitor')}
                 </button>
                 <button onClick={() => setShowForm(false)} className="btn-secondary">
-                  Отмена
+                  {t('onboarding.back')}
                 </button>
               </div>
             </div>
@@ -434,29 +440,32 @@ export default function Competitors() {
 
           <div className="grid gap-3">
             {competitors.length === 0 ? (
-              <div className="card p-10 text-center text-sm text-gray-400">Конкурентов пока нет.</div>
+              <div className="rounded-2xl border border-[#e7ebf2] bg-white p-12 text-center shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+                <div className="text-[34px] mb-2">🏆</div>
+                <h3 className="text-[16px] font-medium text-[#0f172a]">{t('competitors.noCompetitors')}</h3>
+              </div>
             ) : competitors.map((competitor) => (
-              <div key={competitor._id} className="card p-4 flex items-start justify-between gap-3">
+              <div key={competitor._id} className="rounded-2xl border border-[#e7ebf2] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex items-start justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-sm font-semibold">{competitor.name}</p>
-                    <span className="text-xs bg-brand-50 text-brand-600 px-2 py-0.5 rounded-full">
+                    <p className="text-[15px] font-semibold text-[#0f172a]">{competitor.name}</p>
+                    <span className="text-[11px] bg-[#eef0ff] text-[#5B5FEF] px-2 py-0.5 rounded-full">
                       {competitor.niche}
                     </span>
                     {competitor.foundByAI && (
-                      <span className="text-xs bg-[#eef0ff] text-[#5B5FEF] px-2 py-0.5 rounded-full">AI</span>
+                      <span className="text-[11px] bg-[#eef0ff] text-[#5B5FEF] px-2 py-0.5 rounded-full">AI</span>
                     )}
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">
+                  <p className="text-[12px] text-[#94a3b8] mt-1">
                     {competitor.city || '—'} · {competitor.district || '—'}
                   </p>
                   {competitor.aiReason && (
-                    <p className="text-xs text-gray-500 mt-2 max-w-2xl">{competitor.aiReason}</p>
+                    <p className="text-[12px] text-[#64748b] mt-2 max-w-2xl">{competitor.aiReason}</p>
                   )}
-                  <div className="flex gap-2 mt-3 flex-wrap text-xs">
-                    <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{competitor.stats?.avgRating?.toFixed?.(1) || '0.0'} ★</span>
-                    <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{competitor.stats?.totalReviews || 0} отзывов</span>
-                    <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{competitor.stats?.positivePercent || 0}% позитивных</span>
+                  <div className="flex gap-2 mt-3 flex-wrap text-[12px]">
+                    <span className="bg-[#f8fafc] border border-[#e7ebf2] text-[#0f172a] px-2.5 py-1 rounded-full">{competitor.stats?.avgRating?.toFixed?.(1) || '0.0'} ★</span>
+                    <span className="bg-[#f8fafc] border border-[#e7ebf2] text-[#0f172a] px-2.5 py-1 rounded-full">{competitor.stats?.totalReviews || 0} {t('analytics.totalReviews').toLowerCase()}</span>
+                    <span className="bg-[#ecfdf5] text-[#059669] px-2.5 py-1 rounded-full">{competitor.stats?.positivePercent || 0}% positive</span>
                   </div>
                 </div>
                 <div className="flex gap-2 shrink-0">
@@ -465,15 +474,15 @@ export default function Competitors() {
                     disabled={syncMutation.isPending}
                     className="btn-secondary text-xs"
                   >
-                    Синхронизировать
+                    {t('locations.syncNow')}
                   </button>
                   <button
                     onClick={() => {
-                      if (confirm('Удалить конкурента?')) deleteMutation.mutate(competitor._id)
+                      if (confirm(t('locations.deleteConfirm'))) deleteMutation.mutate(competitor._id)
                     }}
-                    className="btn-secondary text-xs text-red-500 hover:text-red-600"
+                    className="btn-ghost text-xs text-[#dc2626] hover:text-[#b91c1c]"
                   >
-                    Удалить
+                    {t('locations.disconnect')}
                   </button>
                 </div>
               </div>
@@ -482,51 +491,51 @@ export default function Competitors() {
         </>
       ) : (
         <div className="flex flex-col gap-4">
-          <div className="card p-4">
+          <div className="rounded-2xl border border-[#e7ebf2] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <div>
-                <label className="label">Бизнес</label>
+                <label className="label">{t('onboarding.businessName')}</label>
                 <select
                   className="input"
                   value={selectedBusinessId}
                   onChange={(e) => setSelectedBusinessId(e.target.value)}
                 >
-                  <option value="">Выберите бизнес</option>
+                  <option value="">{t('onboarding.businessName')}</option>
                   {businesses.map((business) => (
                     <option key={business._id} value={business._id}>{business.name}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="label">Город</label>
+                <label className="label">City</label>
                 <select
                   className="input"
                   value={filterForm.city}
                   onChange={(e) => setFilterForm((current) => ({ ...current, city: e.target.value }))}
                 >
-                  <option value="">Все города</option>
+                  <option value="">All cities</option>
                   {cityOptions.map((city) => <option key={city} value={city}>{city}</option>)}
                 </select>
               </div>
               <div>
-                <label className="label">Район</label>
+                <label className="label">District</label>
                 <select
                   className="input"
                   value={filterForm.district}
                   onChange={(e) => setFilterForm((current) => ({ ...current, district: e.target.value }))}
                 >
-                  <option value="">Все районы</option>
+                  <option value="">All districts</option>
                   {districtOptions.map((district) => <option key={district} value={district}>{district}</option>)}
                 </select>
               </div>
               <div>
-                <label className="label">Ниша</label>
+                <label className="label">Niche</label>
                 <select
                   className="input"
                   value={filterForm.niche}
                   onChange={(e) => setFilterForm((current) => ({ ...current, niche: e.target.value }))}
                 >
-                  <option value="">Все ниши</option>
+                  <option value="">All niches</option>
                   {NICHES.map((niche) => (
                     <option key={niche.value} value={niche.value}>{niche.label}</option>
                   ))}
@@ -540,37 +549,37 @@ export default function Competitors() {
                 className="btn-secondary text-xs"
                 disabled={!selectedBusinessId || insightsMutation.isPending}
               >
-                {insightsMutation.isPending ? 'Анализируем...' : 'AI-инсайты'}
+                {insightsMutation.isPending ? 'Analyzing...' : 'AI Insights'}
               </button>
               <button onClick={handleCompare} className="btn-brand text-xs" disabled={!selectedBusinessId || comparisonLoading}>
-                {comparisonLoading ? 'Сравниваем...' : 'Сравнить'}
+                {comparisonLoading ? 'Comparing...' : 'Compare'}
               </button>
             </div>
           </div>
 
           {insightsResult?.insights && (
-            <div className="card p-5">
+            <div className="rounded-2xl border border-[#e7ebf2] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
               <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
-                <h2 className="text-sm font-semibold">AI-инсайты</h2>
-                <span className="text-xs bg-[#eef0ff] text-[#5B5FEF] px-2 py-0.5 rounded-full">
+                <h2 className="text-[14px] font-medium text-[#0f172a]">AI Insights</h2>
+                <span className="text-[11px] bg-[#eef0ff] text-[#5B5FEF] px-2.5 py-1 rounded-full">
                   Revi analysis
                 </span>
               </div>
 
-              <p className="text-sm text-gray-700">{insightsResult.insights.summary}</p>
+              <p className="text-[13px] text-[#64748b]">{insightsResult.insights.summary}</p>
 
-              <div className="grid md:grid-cols-2 gap-4 mt-4 text-sm">
-                <div className="rounded-xl border border-gray-200 p-4 bg-white">
-                  <p className="text-xs font-medium text-gray-500 mb-2">Сильные стороны</p>
-                  <ul className="space-y-2 text-gray-700">
+              <div className="grid md:grid-cols-2 gap-4 mt-4 text-[13px]">
+                <div className="rounded-2xl border border-[#e7ebf2] p-4 bg-[#f8fafc]">
+                  <p className="text-[11px] font-medium text-[#94a3b8] uppercase tracking-[0.22em] mb-2">{t('competitors.strength')}</p>
+                  <ul className="space-y-2 text-[#0f172a]">
                     {(insightsResult.insights.strongPoints || []).map((point, index) => (
                       <li key={point + index}>• {point}</li>
                     ))}
                   </ul>
                 </div>
-                <div className="rounded-xl border border-gray-200 p-4 bg-white">
-                  <p className="text-xs font-medium text-gray-500 mb-2">Слабые стороны</p>
-                  <ul className="space-y-2 text-gray-700">
+                <div className="rounded-2xl border border-[#e7ebf2] p-4 bg-[#f8fafc]">
+                  <p className="text-[11px] font-medium text-[#94a3b8] uppercase tracking-[0.22em] mb-2">{t('competitors.weakness')}</p>
+                  <ul className="space-y-2 text-[#0f172a]">
                     {(insightsResult.insights.weakPoints || []).map((point, index) => (
                       <li key={point + index}>• {point}</li>
                     ))}
@@ -578,21 +587,21 @@ export default function Competitors() {
                 </div>
               </div>
 
-              <div className="mt-4 rounded-xl border border-gray-200 p-4 bg-white text-sm">
-                <p className="text-xs font-medium text-gray-500 mb-2">Что делать</p>
+              <div className="mt-4 rounded-2xl border border-[#e7ebf2] p-4 bg-[#f8fafc] text-[13px]">
+                <p className="text-[11px] font-medium text-[#94a3b8] uppercase tracking-[0.22em] mb-2">Action plan</p>
                 <div className="space-y-3">
                   {(insightsResult.insights.actions || []).map((action, index) => (
-                    <div key={`${action.action}-${index}`} className="rounded-lg bg-[#f8f9fa] px-3 py-2">
-                      <p className="font-medium">{action.action}</p>
-                      <p className="text-xs text-gray-500 mt-1">{action.reason}</p>
+                    <div key={`${action.action}-${index}`} className="rounded-xl bg-white border border-[#e7ebf2] px-3 py-2">
+                      <p className="font-medium text-[#0f172a]">{action.action}</p>
+                      <p className="text-[12px] text-[#64748b] mt-1">{action.reason}</p>
                     </div>
                   ))}
                 </div>
               </div>
 
               {insightsResult.insights.vsLeader && (
-                <div className="mt-4 rounded-xl border border-gray-200 p-4 bg-white text-sm text-gray-700">
-                  <p className="text-xs font-medium text-gray-500 mb-2">До лидера рынка</p>
+                <div className="mt-4 rounded-2xl border border-[#e7ebf2] p-4 bg-[#f8fafc] text-[13px] text-[#64748b]">
+                  <p className="text-[11px] font-medium text-[#94a3b8] uppercase tracking-[0.22em] mb-2">vs Market leader</p>
                   {insightsResult.insights.vsLeader}
                 </div>
               )}
@@ -600,39 +609,41 @@ export default function Competitors() {
           )}
 
           {!comparisonData ? (
-            <div className="card p-10 text-center text-sm text-gray-400">
-              Выберите бизнес и нажмите «Сравнить».
+            <div className="rounded-2xl border border-[#e7ebf2] bg-white p-12 text-center shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+              <div className="text-[34px] mb-2">📊</div>
+              <p className="text-[14px] font-medium text-[#0f172a]">Select a business and click Compare.</p>
             </div>
           ) : (
             <>
-              <div className="card overflow-hidden">
+              <div className="rounded-2xl border border-[#e7ebf2] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] overflow-hidden">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-gray-50 text-gray-500">
+                  <table className="w-full text-[13px]">
+                    <thead className="bg-[#f8fafc] text-[#64748b]">
                       <tr>
-                        <th className="text-left px-4 py-3 font-medium">Название</th>
-                        <th className="text-left px-4 py-3 font-medium">Рейтинг</th>
-                        <th className="text-left px-4 py-3 font-medium">Отзывов</th>
-                        <th className="text-left px-4 py-3 font-medium">Позитивных %</th>
-                        <th className="text-left px-4 py-3 font-medium">Негативных %</th>
+                        <th className="text-left px-4 py-3 font-medium">Name</th>
+                        <th className="text-left px-4 py-3 font-medium">{t('competitors.rating')}</th>
+                        <th className="text-left px-4 py-3 font-medium">{t('competitors.reviewsCount')}</th>
+                        <th className="text-left px-4 py-3 font-medium">Positive %</th>
+                        <th className="text-left px-4 py-3 font-medium">Negative %</th>
                       </tr>
                     </thead>
                     <tbody>
                       {tableRows.map((row) => (
                         <tr
                           key={row.name}
-                          className={`${row.isMine ? 'bg-brand-50 border-brand-500' : 'hover:bg-gray-50'} border-b border-gray-100 last:border-0`}
+                          className={`${row.isMine ? 'bg-[#eef0ff] border-[#5B5FEF]' : 'hover:bg-[#f8fafc]'} border-b border-[#e7ebf2] last:border-0`}
                         >
-                          <td className="px-4 py-3 font-medium">
+                          <td className="px-4 py-3 font-medium text-[#0f172a]">
                             <div className="flex items-center gap-2 flex-wrap">
                               <span>{row.name}</span>
                               {row.foundByAI && <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#eef0ff] text-[#5B5FEF]">AI</span>}
+                              {row.isMine && <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#ecfdf5] text-[#059669]">You</span>}
                             </div>
                           </td>
-                          <td className="px-4 py-3">{row.avgRating.toFixed(2)}</td>
-                          <td className="px-4 py-3">{row.totalReviews}</td>
-                          <td className="px-4 py-3">{row.positivePercent}%</td>
-                          <td className="px-4 py-3">{row.negativePercent}%</td>
+                          <td className="px-4 py-3 text-[#0f172a]">{row.avgRating.toFixed(2)}</td>
+                          <td className="px-4 py-3 text-[#0f172a]">{row.totalReviews}</td>
+                          <td className="px-4 py-3 text-[#059669]">{row.positivePercent}%</td>
+                          <td className="px-4 py-3 text-[#dc2626]">{row.negativePercent}%</td>
                         </tr>
                       ))}
                     </tbody>
@@ -641,24 +652,24 @@ export default function Competitors() {
               </div>
 
               <div className="flex gap-2 flex-wrap">
-                <span className="text-xs bg-white border border-gray-200 rounded-full px-3 py-1">
-                  Ваше место в городе: {comparisonData.cityRank} из {comparisonData.cityTotal || tableRows.length}
+                <span className="text-[12px] bg-white border border-[#e7ebf2] rounded-full px-3 py-1 text-[#64748b]">
+                  City rank: {comparisonData.cityRank} of {comparisonData.cityTotal || tableRows.length}
                 </span>
-                <span className="text-xs bg-white border border-gray-200 rounded-full px-3 py-1">
-                  Ваше место в районе: {comparisonData.districtRank} из {comparisonData.districtTotal || tableRows.length}
+                <span className="text-[12px] bg-white border border-[#e7ebf2] rounded-full px-3 py-1 text-[#64748b]">
+                  District rank: {comparisonData.districtRank} of {comparisonData.districtTotal || tableRows.length}
                 </span>
               </div>
 
-              <div className="card p-4">
-                <p className="text-sm font-medium mb-4">Сравнение рейтингов</p>
+              <div className="rounded-2xl border border-[#e7ebf2] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+                <p className="text-[14px] font-medium text-[#0f172a] mb-4">Rating comparison</p>
                 <ResponsiveContainer width="100%" height={260}>
                   <BarChart data={chartData}>
-                    <XAxis dataKey="shortName" tick={{ fontSize: 12 }} />
-                    <YAxis domain={[0, 5]} tick={{ fontSize: 12 }} />
+                    <XAxis dataKey="shortName" tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                    <YAxis domain={[0, 5]} tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                     <Tooltip content={<TooltipContent />} />
-                    <Bar dataKey="avgRating" radius={[4, 4, 0, 0]}>
+                    <Bar dataKey="avgRating" radius={[6, 6, 0, 0]}>
                       {chartData.map((row) => (
-                        <Cell key={row.name} fill={row.isMine ? '#5B5FEF' : '#9ca3af'} />
+                        <Cell key={row.name} fill={row.isMine ? '#5B5FEF' : '#CBD5E1'} />
                       ))}
                     </Bar>
                   </BarChart>

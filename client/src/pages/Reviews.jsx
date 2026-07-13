@@ -4,13 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { ArrowUpRight, Bot, CheckCircle2, CircleDot, MessageSquareMore, Sparkles } from 'lucide-react'
 import { reviewApi } from '../api'
-
-const FILTERS = [
-  { label: 'All', value: '' },
-  { label: 'Needs reply', value: 'unanswered' },
-  { label: 'Negative', value: 'negative' },
-  { label: 'Positive', value: 'positive' },
-]
+import { useLanguageStore } from '../store/useLanguageStore'
 
 const PLATFORM_BADGE = {
   GOOGLE: 'bg-[#eef0ff] text-[#5B5FEF]',
@@ -26,27 +20,6 @@ const PLATFORM_LABELS = {
   YANDEX: 'Яндекс',
   AVITO: 'Avito',
   INSTAGRAM: 'Instagram',
-}
-
-const SENTIMENT_META = {
-  POSITIVE: {
-    title: 'Positive',
-    dot: 'bg-[#10B981]',
-    pill: 'bg-[#ecfdf5] text-[#059669]',
-    accent: 'border-l-[#10B981]',
-  },
-  NEUTRAL: {
-    title: 'Neutral',
-    dot: 'bg-[#94a3b8]',
-    pill: 'bg-[#f8fafc] text-[#64748b]',
-    accent: 'border-l-[#94a3b8]',
-  },
-  NEGATIVE: {
-    title: 'Negative',
-    dot: 'bg-[#ef4444]',
-    pill: 'bg-[#fee2e2] text-[#dc2626]',
-    accent: 'border-l-[#ef4444]',
-  },
 }
 
 function Avatar({ name }) {
@@ -81,14 +54,14 @@ function SkeletonCard() {
   )
 }
 
-function buildAiSummary(review) {
+function buildAiSummary(review, t) {
   const text = review?.text || ''
-  if (!text) return 'Customer left a short signal without text.'
+  if (!text) return t('reviews.draft')
 
   const lower = text.toLowerCase()
   const topics = []
-  if (lower.includes('speed') || lower.includes('быстро') || lower.includes('fast')) topics.push('fast service')
-  if (lower.includes('staff') || lower.includes('персонал')) topics.push('staff')
+  if (lower.includes('speed') || lower.includes('быстро') || lower.includes('fast')) topics.push('service speed')
+  if (lower.includes('staff') || lower.includes('персонал')) topics.push('staff quality')
   if (lower.includes('clean') || lower.includes('чист')) topics.push('cleanliness')
   if (lower.includes('coffee') || lower.includes('еда') || lower.includes('food')) topics.push('product quality')
 
@@ -101,11 +74,40 @@ function buildAiSummary(review) {
 export default function Reviews() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { t } = useLanguageStore()
   const [searchParams] = useSearchParams()
   const [filter, setFilter] = useState(searchParams.get('filter') || '')
   const [page, setPage] = useState(1)
   const [generatedReplies, setGeneratedReplies] = useState({})
   const [pendingReplyId, setPendingReplyId] = useState(null)
+
+  const FILTERS = [
+    { label: t('reviews.filterAll'), value: '' },
+    { label: t('reviews.unanswered'), value: 'unanswered' },
+    { label: t('reviews.sentiment') + ' (-)', value: 'negative' },
+    { label: t('reviews.sentiment') + ' (+)', value: 'positive' },
+  ]
+
+  const SENTIMENT_META = {
+    POSITIVE: {
+      title: t('reviews.sentiment') + ' (+)',
+      dot: 'bg-[#10B981]',
+      pill: 'bg-[#ecfdf5] text-[#059669]',
+      accent: 'border-l-[#10B981]',
+    },
+    NEUTRAL: {
+      title: 'Neutral',
+      dot: 'bg-[#94a3b8]',
+      pill: 'bg-[#f8fafc] text-[#64748b]',
+      accent: 'border-l-[#94a3b8]',
+    },
+    NEGATIVE: {
+      title: t('reviews.sentiment') + ' (-)',
+      dot: 'bg-[#ef4444]',
+      pill: 'bg-[#fee2e2] text-[#dc2626]',
+      accent: 'border-l-[#ef4444]',
+    },
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ['reviews', { filter, page }],
@@ -146,10 +148,10 @@ export default function Reviews() {
     <div className="p-6 flex flex-col gap-5">
       <header className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.24em] text-[#94a3b8]">Customer inbox</p>
+          <p className="text-[11px] uppercase tracking-[0.24em] text-[#94a3b8]">{t('reviews.title')}</p>
           <h1 className="text-[28px] md:text-[34px] font-semibold tracking-tight text-[#0f172a] mt-2">Conversation cards, not table rows</h1>
           <p className="text-[13px] text-[#64748b] mt-2 max-w-2xl">
-            Read the sentiment, generate the reply, and resolve the conversation without losing context.
+            {t('reviews.subtitle')}
           </p>
         </div>
 
@@ -157,7 +159,7 @@ export default function Reviews() {
           <span className="badge-neutral">{stats.total} total</span>
           <span className="badge-pending">{stats.unanswered} waiting</span>
           <button onClick={() => navigate('/locations')} className="btn-brand">
-            + Add location
+            {t('header.addLocation')}
           </button>
         </div>
       </header>
@@ -181,17 +183,17 @@ export default function Reviews() {
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <div className="rounded-2xl border border-[#e7ebf2] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-          <p className="text-[11px] uppercase tracking-[0.22em] text-[#94a3b8]">Positive</p>
+          <p className="text-[11px] uppercase tracking-[0.22em] text-[#94a3b8]">{t('reviews.sentiment')} (+)</p>
           <p className="text-[32px] font-semibold tracking-tight text-[#0f172a] mt-2">{stats.positive}</p>
           <p className="text-[13px] text-[#64748b] mt-2">Reviews with a good signal and little friction.</p>
         </div>
         <div className="rounded-2xl border border-[#e7ebf2] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-          <p className="text-[11px] uppercase tracking-[0.22em] text-[#94a3b8]">Negative</p>
+          <p className="text-[11px] uppercase tracking-[0.22em] text-[#94a3b8]">{t('reviews.sentiment')} (-)</p>
           <p className="text-[32px] font-semibold tracking-tight text-[#0f172a] mt-2">{stats.negative}</p>
           <p className="text-[13px] text-[#64748b] mt-2">Pay attention to these conversations first.</p>
         </div>
         <div className="rounded-2xl border border-[#e7ebf2] bg-[#0f172a] p-5 text-white shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
-          <p className="text-[11px] uppercase tracking-[0.22em] text-white/45">Reply queue</p>
+          <p className="text-[11px] uppercase tracking-[0.22em] text-white/45">{t('dashboard.waitingReply')}</p>
           <p className="text-[32px] font-semibold tracking-tight mt-2">{stats.unanswered}</p>
           <p className="text-[13px] text-white/60 mt-2">Reviews waiting for a human or AI response.</p>
         </div>
@@ -207,12 +209,12 @@ export default function Reviews() {
         ) : !data?.reviews?.length ? (
           <div className="rounded-2xl border border-dashed border-[#dbe2ef] bg-white p-12 text-center shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
             <div className="text-[34px] mb-2">💬</div>
-            <h3 className="text-[16px] font-medium text-[#0f172a]">No reviews yet</h3>
+            <h3 className="text-[16px] font-medium text-[#0f172a]">{t('reviews.empty')}</h3>
             <p className="text-[13px] text-[#64748b] mt-1 max-w-sm mx-auto">
               Connect a location to start filling this inbox with real customer feedback.
             </p>
             <button onClick={() => navigate('/locations')} className="btn-brand mt-4">
-              Add location
+              {t('header.addLocation')}
             </button>
           </div>
         ) : (
@@ -253,19 +255,19 @@ export default function Reviews() {
                     </div>
 
                     <p className="text-[14px] text-[#334155] leading-relaxed mt-4 whitespace-pre-wrap">
-                      {review.text || <span className="text-[#94a3b8] italic">No text provided</span>}
+                      {review.text || <span className="text-[#94a3b8] italic">{t('reviews.draft')}</span>}
                     </p>
 
                     <div className="grid md:grid-cols-2 gap-3 mt-4">
                       <div className="rounded-2xl border border-[#e7ebf2] bg-[#f8fafc] p-4">
                         <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-[#94a3b8] mb-2">
-                          <Sparkles size={13} /> AI Summary
+                          <Sparkles size={13} /> {t('dashboard.aiSummary')}
                         </div>
-                        <p className="text-[13px] text-[#0f172a] leading-relaxed">{buildAiSummary(review)}</p>
+                        <p className="text-[13px] text-[#0f172a] leading-relaxed">{buildAiSummary(review, t)}</p>
                       </div>
                       <div className="rounded-2xl border border-[#e7ebf2] bg-[#f8fafc] p-4">
                         <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-[#94a3b8] mb-2">
-                          <Bot size={13} /> AI Reply
+                          <Bot size={13} /> {t('reviews.aiResponse')}
                         </div>
                         <p className="text-[13px] text-[#0f172a] leading-relaxed line-clamp-4">
                           {aiReply || 'Generate a suggested answer and keep the tone aligned to your brand.'}
@@ -274,8 +276,7 @@ export default function Reviews() {
                     </div>
 
                     <div className="flex flex-wrap gap-2 mt-4">
-                      {review.isReplied ? <span className="badge-positive inline-flex items-center gap-1"><CheckCircle2 size={11} /> replied</span> : <span className="badge-pending inline-flex items-center gap-1"><CircleDot size={11} /> waiting</span>}
-                      {review.sentiment === 'NEGATIVE' && <span className="badge-negative">negative attention</span>}
+                      {review.isReplied ? <span className="badge-positive inline-flex items-center gap-1"><CheckCircle2 size={11} /> {t('reviews.replied')}</span> : <span className="badge-pending inline-flex items-center gap-1"><CircleDot size={11} /> {t('reviews.unanswered')}</span>}
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2 mt-4">
@@ -287,7 +288,7 @@ export default function Reviews() {
                         disabled={pendingReplyId === review._id}
                         className="btn-brand text-xs"
                       >
-                        {pendingReplyId === review._id ? 'Generating...' : 'AI Reply'}
+                        {pendingReplyId === review._id ? t('reviews.generating') : t('reviews.generate')}
                       </button>
                       <button
                         onClick={(e) => {
@@ -296,7 +297,7 @@ export default function Reviews() {
                         }}
                         className="btn-secondary text-xs"
                       >
-                        Open detail
+                        {t('reviews.viewDetail')}
                       </button>
                       {!review.isReplied && (
                         <button
@@ -306,7 +307,7 @@ export default function Reviews() {
                           }}
                           className="btn-ghost text-xs"
                         >
-                          Mark replied
+                          {t('reviews.replied')}
                         </button>
                       )}
                       <span className="ml-auto text-[12px] text-[#94a3b8] inline-flex items-center gap-1">

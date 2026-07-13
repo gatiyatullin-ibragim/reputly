@@ -6,9 +6,12 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:5001',
+        target: 'http://localhost:5003',
         changeOrigin: true,
       },
     },
+  },
+  optimizeDeps: {
+    include: ['framer-motion'],
   },
 })

@@ -3,11 +3,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { ArrowUpRight, Bot, Gauge, Camera, MapPin, RefreshCw, ShieldCheck, Sparkles, TriangleAlert } from 'lucide-react'
 import { locationApi, businessApi } from '../api'
+import { useLanguageStore } from '../store/useLanguageStore'
 
-function connectInstagram(locationId) {
+function connectInstagram(locationId, t) {
   const appId = import.meta.env.VITE_FB_APP_ID
   if (!appId) {
-    alert('Не задан VITE_FB_APP_ID')
+    alert(t('locations.notConnected'))
     return
   }
 
@@ -26,7 +27,7 @@ function platformTags(location) {
   const tags = []
   if (location.googlePlaceId) tags.push({ label: 'Google', tone: 'bg-[#eef0ff] text-[#5B5FEF]' })
   if (location.twoGisId) tags.push({ label: '2GIS', tone: 'bg-[#ecfdf5] text-[#059669]' })
-  if (location.yandexOrgId) tags.push({ label: 'Яндекс', tone: 'bg-[#fff7ed] text-[#d97706]' })
+  if (location.yandexOrgId) tags.push({ label: 'Yandex', tone: 'bg-[#fff7ed] text-[#d97706]' })
   if (location.avitoUrl) tags.push({ label: 'Avito', tone: 'bg-[#e0f2fe] text-[#0284c7]' })
   if (location.instagramBusinessId) tags.push({ label: 'Instagram', tone: 'bg-[#fce7f3] text-[#be185d]' })
   return tags
@@ -43,9 +44,9 @@ function healthScore(stats = {}) {
   return Math.max(0, Math.min(100, Math.round(baseline + activity + positive * 0.2 - penalty)))
 }
 
-function suggestAction(location) {
+function suggestAction(location, t) {
   const score = healthScore(location.stats)
-  if (!location.stats?.totalReviews) return 'Connect reviews first, then track the first signal.'
+  if (!location.stats?.totalReviews) return t('dashboard.noReviews')
   if (score < 60) return 'Prioritize replies on unresolved reviews and stabilize the rating.'
   if ((location.stats?.unansweredCount || 0) > 3) return 'Keep the inbox tight. Clear the unanswered queue today.'
   return 'The location is healthy. Keep momentum with fast reply habits.'
@@ -53,6 +54,7 @@ function suggestAction(location) {
 
 export default function Locations() {
   const queryClient = useQueryClient()
+  const { t } = useLanguageStore()
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({
     businessId: '', name: '', googlePlaceId: '', twoGisId: '', yandexOrgId: '', avitoUrl: '',
@@ -109,32 +111,32 @@ export default function Locations() {
     <div className="p-6 flex flex-col gap-5">
       <header className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.24em] text-[#94a3b8]">Operations</p>
+          <p className="text-[11px] uppercase tracking-[0.24em] text-[#94a3b8]">{t('locations.title')}</p>
           <h1 className="text-[28px] md:text-[34px] font-semibold tracking-tight text-[#0f172a] mt-2">Every location as a health card</h1>
           <p className="text-[13px] text-[#64748b] mt-2 max-w-2xl">
-            Revi shows rating health, platform connections, and the exact action each branch needs next.
+            {t('locations.subtitle')}
           </p>
         </div>
         <button onClick={() => setShowForm(true)} className="btn-brand">
-          + Add location
+          {t('locations.addLocation')}
         </button>
       </header>
 
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="rounded-2xl border border-[#e7ebf2] bg-[#0f172a] p-5 text-white shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
-          <p className="text-[11px] uppercase tracking-[0.22em] text-white/45">Locations</p>
+          <p className="text-[11px] uppercase tracking-[0.22em] text-white/45">{t('nav.locations')}</p>
           <p className="text-[34px] font-semibold tracking-tight mt-2">{overview.total}</p>
           <p className="text-[13px] text-white/60 mt-2">Tracked branches across all businesses.</p>
         </div>
         <div className="rounded-2xl border border-[#e7ebf2] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           <div className="rounded-xl bg-[#eef0ff] p-2 text-[#5B5FEF] w-fit mb-4"><Gauge size={16} strokeWidth={1.8} /></div>
-          <p className="text-[11px] uppercase tracking-[0.22em] text-[#94a3b8]">Average health</p>
+          <p className="text-[11px] uppercase tracking-[0.22em] text-[#94a3b8]">{t('analytics.avgRating')}</p>
           <p className="text-[34px] font-semibold tracking-tight text-[#0f172a] mt-2">{overview.avg}</p>
           <p className="text-[13px] text-[#64748b] mt-2">Measured from rating, activity, and unanswered review load.</p>
         </div>
         <div className="rounded-2xl border border-[#e7ebf2] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           <div className="rounded-xl bg-[#ecfdf5] p-2 text-[#059669] w-fit mb-4"><ShieldCheck size={16} strokeWidth={1.8} /></div>
-          <p className="text-[11px] uppercase tracking-[0.22em] text-[#94a3b8]">Connected platforms</p>
+          <p className="text-[11px] uppercase tracking-[0.22em] text-[#94a3b8]">{t('locations.connected')}</p>
           <p className="text-[34px] font-semibold tracking-tight text-[#0f172a] mt-2">{overview.connected}</p>
           <p className="text-[13px] text-[#64748b] mt-2">The more channels connected, the more complete the signal.</p>
         </div>
@@ -146,7 +148,7 @@ export default function Locations() {
           <div className="flex gap-2">
             <input
               className="input flex-1"
-              placeholder="Business name"
+              placeholder={t('onboarding.businessName')}
               value={bizName}
               onChange={(e) => setBizName(e.target.value)}
             />
@@ -155,7 +157,7 @@ export default function Locations() {
               className="btn-primary"
               disabled={!bizName || createBizMutation.isPending}
             >
-              Create
+              {t('onboarding.continue')}
             </button>
           </div>
         </div>
@@ -163,43 +165,43 @@ export default function Locations() {
 
       {showForm && (
         <div className="rounded-2xl border border-[#e7ebf2] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-          <h2 className="text-[14px] font-medium mb-4 text-[#0f172a]">New location</h2>
+          <h2 className="text-[14px] font-medium mb-4 text-[#0f172a]">{t('locations.addLocation')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="label">Business</label>
+              <label className="label">{t('onboarding.businessName')}</label>
               <select
                 className="input"
                 value={form.businessId}
                 onChange={(e) => setForm({ ...form, businessId: e.target.value })}
               >
-                <option value="">Choose business</option>
+                <option value="">{t('onboarding.businessName')}</option>
                 {businesses.map((business) => (
                   <option key={business._id} value={business._id}>{business.name}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="label">Location name</label>
-              <input className="input" placeholder="Flagship store"
+              <label className="label">{t('locations.name')}</label>
+              <input className="input" placeholder={t('onboarding.locationNamePl')}
                 value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </div>
             <div>
-              <label className="label">Google Place ID</label>
+              <label className="label">{t('onboarding.googleId')}</label>
               <input className="input" placeholder="ChIJ..."
                 value={form.googlePlaceId} onChange={(e) => setForm({ ...form, googlePlaceId: e.target.value })} />
             </div>
             <div>
-              <label className="label">2GIS ID</label>
+              <label className="label">{t('onboarding.twoGisId')}</label>
               <input className="input" placeholder="141265..."
                 value={form.twoGisId} onChange={(e) => setForm({ ...form, twoGisId: e.target.value })} />
             </div>
             <div>
-              <label className="label">Yandex ID</label>
+              <label className="label">{t('onboarding.yandexId')}</label>
               <input className="input" placeholder="123456789"
                 value={form.yandexOrgId} onChange={(e) => setForm({ ...form, yandexOrgId: e.target.value })} />
             </div>
             <div>
-              <label className="label">Avito URL</label>
+              <label className="label">{t('onboarding.avitoUrl')}</label>
               <input className="input" placeholder="https://www.avito.ru/..."
                 value={form.avitoUrl} onChange={(e) => setForm({ ...form, avitoUrl: e.target.value })} />
             </div>
@@ -209,10 +211,10 @@ export default function Locations() {
                 disabled={!form.businessId || !form.name || createMutation.isPending}
                 className="btn-primary flex-1"
               >
-                {createMutation.isPending ? 'Creating...' : 'Create location'}
+                {createMutation.isPending ? t('reviews.generating') : t('locations.addLocation')}
               </button>
               <button onClick={() => setShowForm(false)} className="btn-secondary">
-                Cancel
+                {t('onboarding.back')}
               </button>
             </div>
           </div>
@@ -222,7 +224,7 @@ export default function Locations() {
       {locations.length === 0 ? (
         <div className="rounded-2xl border border-[#e7ebf2] bg-white p-12 text-center shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           <div className="text-[34px] mb-2">📍</div>
-          <h3 className="text-[16px] font-medium text-[#0f172a]">No locations yet</h3>
+          <h3 className="text-[16px] font-medium text-[#0f172a]">{t('locations.neverSynced')}</h3>
           <p className="text-[13px] text-[#64748b] mt-1">Add your first branch to start monitoring reputation.</p>
         </div>
       ) : (
@@ -230,7 +232,7 @@ export default function Locations() {
           {locations.map((location) => {
             const score = healthScore(location.stats)
             const tags = platformTags(location)
-            const suggestion = suggestAction(location)
+            const suggestion = suggestAction(location, t)
 
             return (
               <motion.article
@@ -249,7 +251,7 @@ export default function Locations() {
                         <p className="text-[15px] font-semibold text-[#0f172a]">{location.name}</p>
                         <p className="text-[12px] text-[#94a3b8] mt-0.5">
                           {location.businessId?.name}
-                          {location.lastSyncAt && ` · synced ${new Date(location.lastSyncAt).toLocaleDateString('ru')}`}
+                          {location.lastSyncAt && ` · ${t('locations.lastSync').replace('{{time}}', new Date(location.lastSyncAt).toLocaleDateString('ru'))}`}
                         </p>
                       </div>
                       <div className={`px-3 py-1 rounded-full text-[12px] font-medium ${score >= 75 ? 'bg-[#ecfdf5] text-[#059669]' : score >= 50 ? 'bg-[#fff7ed] text-[#d97706]' : 'bg-[#fee2e2] text-[#dc2626]'}`}>
@@ -259,15 +261,15 @@ export default function Locations() {
 
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
                       <div className="rounded-2xl bg-[#f8fafc] border border-[#e7ebf2] p-3">
-                        <p className="text-[11px] uppercase tracking-[0.22em] text-[#94a3b8]">Rating</p>
+                        <p className="text-[11px] uppercase tracking-[0.22em] text-[#94a3b8]">{t('reviews.rating')}</p>
                         <p className="text-[18px] font-semibold text-[#0f172a] mt-1">{location.stats?.avgRating?.toFixed?.(1) || '0.0'}</p>
                       </div>
                       <div className="rounded-2xl bg-[#f8fafc] border border-[#e7ebf2] p-3">
-                        <p className="text-[11px] uppercase tracking-[0.22em] text-[#94a3b8]">Pending</p>
+                        <p className="text-[11px] uppercase tracking-[0.22em] text-[#94a3b8]">{t('reviews.unanswered')}</p>
                         <p className="text-[18px] font-semibold text-[#0f172a] mt-1">{location.stats?.unansweredCount || 0}</p>
                       </div>
                       <div className="rounded-2xl bg-[#f8fafc] border border-[#e7ebf2] p-3">
-                        <p className="text-[11px] uppercase tracking-[0.22em] text-[#94a3b8]">Reviews</p>
+                        <p className="text-[11px] uppercase tracking-[0.22em] text-[#94a3b8]">{t('analytics.totalReviews')}</p>
                         <p className="text-[18px] font-semibold text-[#0f172a] mt-1">{location.stats?.totalReviews || 0}</p>
                       </div>
                       <div className="rounded-2xl bg-[#f8fafc] border border-[#e7ebf2] p-3">
@@ -295,24 +297,21 @@ export default function Locations() {
                         disabled={syncMutation.isPending}
                         className="btn-secondary text-xs inline-flex items-center gap-2"
                       >
-                        <RefreshCw size={14} /> Sync
+                        <RefreshCw size={14} /> {t('locations.syncNow')}
                       </button>
                       <button
                         type="button"
-                        onClick={() => connectInstagram(location._id)}
+                        onClick={() => connectInstagram(location._id, t)}
                         className="btn-ghost text-xs inline-flex items-center gap-2"
                       >
                         <Camera size={14} /> Instagram
                       </button>
                       <button
-                        onClick={() => { if (confirm('Delete location?')) removeMutation.mutate(location._id) }}
+                        onClick={() => { if (confirm(t('locations.deleteConfirm'))) removeMutation.mutate(location._id) }}
                         className="btn-ghost text-xs text-[#dc2626] hover:text-[#b91c1c]"
                       >
-                        Delete
+                        {t('locations.disconnect')}
                       </button>
-                      <span className="ml-auto text-[12px] text-[#94a3b8] inline-flex items-center gap-1">
-                        Reputation ops <ArrowUpRight size={13} />
-                      </span>
                     </div>
                   </div>
                 </div>

@@ -1,4 +1,5 @@
 import { useAuthStore } from '../store/useAuthStore'
+import { useLanguageStore } from '../store/useLanguageStore'
 
 function Avatar({ name }) {
   const letter = (name?.[0] || '?').toUpperCase()
@@ -17,6 +18,7 @@ function Avatar({ name }) {
 
 export default function Settings() {
   const { user } = useAuthStore()
+  const { t } = useLanguageStore()
   const telegramLink = `https://t.me/${import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'YourBot'}?start=${user?.id}`
 
   const plans = [
@@ -28,10 +30,10 @@ export default function Settings() {
   return (
     <div className="p-6 max-w-6xl flex flex-col gap-5">
       <header>
-        <p className="text-[11px] uppercase tracking-[0.24em] text-[#94a3b8]">Workspace settings</p>
+        <p className="text-[11px] uppercase tracking-[0.24em] text-[#94a3b8]">{t('settings.title')}</p>
         <h1 className="text-[28px] md:text-[34px] font-semibold tracking-tight text-[#0f172a] mt-2">Premium controls for your account and integrations</h1>
         <p className="text-[13px] text-[#64748b] mt-2 max-w-2xl">
-          Profile, Telegram alerts, and plan management are grouped into calm, spacious cards so the settings page feels as polished as the rest of Revi.
+          {t('settings.subtitle')}
         </p>
       </header>
 
@@ -39,7 +41,7 @@ export default function Settings() {
         <div className="rounded-2xl border border-[#e7ebf2] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] xl:col-span-2">
           <div className="flex items-center justify-between gap-4 flex-wrap mb-5">
             <div>
-              <p className="text-[14px] font-medium text-[#0f172a]">Profile</p>
+              <p className="text-[14px] font-medium text-[#0f172a]">{t('settings.profileSection')}</p>
               <p className="text-[12px] text-[#94a3b8] mt-0.5">Your identity inside the command center</p>
             </div>
             <span className="badge-neutral">{user?.plan || 'START'}</span>
@@ -55,11 +57,11 @@ export default function Settings() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div>
-              <label className="label">Name</label>
+              <label className="label">{t('settings.name')}</label>
               <input className="input" value={user?.name || ''} readOnly />
             </div>
             <div>
-              <label className="label">Email</label>
+              <label className="label">{t('settings.email')}</label>
               <input className="input" value={user?.email || ''} readOnly />
             </div>
             <div>
@@ -86,7 +88,7 @@ export default function Settings() {
         <div className="rounded-2xl border border-[#e7ebf2] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
             <div>
-              <p className="text-[14px] font-medium text-[#0f172a]">Telegram notifications</p>
+              <p className="text-[14px] font-medium text-[#0f172a]">{t('settings.notifyTelegram')}</p>
               <p className="text-[12px] text-[#94a3b8] mt-0.5">Receive a message the moment a review lands.</p>
             </div>
             <span className="badge-neutral">Low-latency alerts</span>
@@ -137,9 +139,9 @@ export default function Settings() {
                 }`}
               >
                 <p className="text-[11px] uppercase tracking-[0.22em] text-[#94a3b8]">{plan.name}</p>
-                <p className="text-[24px] font-semibold tracking-tight text-[#0f172a] mt-2">{plan.price} ₽</p>
+                <p className="text-[24px] font-semibold tracking-tight text-[#0f172a] mt-2">{plan.price} ₸</p>
                 <div className="mt-3 space-y-1 text-[13px] text-[#64748b]">
-                  <p>{plan.locs} locations</p>
+                  <p>{plan.locs} {t('nav.locations').toLowerCase()}</p>
                   <p>{plan.ai} AI replies</p>
                 </div>
                 {plan.highlight && <p className="text-[11px] text-[#5B5FEF] font-medium mt-3">Current plan</p>}
